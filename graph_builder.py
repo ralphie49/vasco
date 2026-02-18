@@ -3,22 +3,19 @@ import os
 from neo4j import GraphDatabase
 from dotenv import load_dotenv
 
-# 1. Load your .env file credentials automatically
 load_dotenv()
 
 class CodeGraphBuilder:
     def __init__(self):
-        # Use os.getenv to keep your password out of the code
         uri = os.getenv("NEO4J_URI", "bolt://localhost:7687")
         user = os.getenv("NEO4J_USER", "neo4j")
         password = os.getenv("NEO4J_PASSWORD")
-        
         self.driver = GraphDatabase.driver(uri, auth=(user, password))
 
     def close(self):
         self.driver.close()
 
-    def parse_file_to_graph(self, file_path):
+    def parse_file_to_graph(self, file_path, base_repo_path):
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 tree = ast.parse(f.read())
@@ -26,24 +23,45 @@ class CodeGraphBuilder:
             print(f"❌ Could not read {file_path}: {e}")
             return
 
-        file_name = os.path.basename(file_path)
+        # Get relative path to use as a unique ID for the Module
+        file_rel_path = os.path.relpath(file_path, base_repo_path).replace("\\", "/")
         
-        # 2. Use execute_write to ensure the database SAVES (commits) the data
         with self.driver.session(database="neo4j") as session:
-            session.execute_write(self._create_elements, file_name, tree)
+            session.execute_write(self._create_elements, file_rel_path, tree)
 
     @staticmethod
     def _create_elements(tx, file_name, tree):
-        # Create the File Node
+        # 1. Create/Update the current Module (File)
         tx.run("MERGE (m:Module {name: $name})", name=file_name)
 
         for item in tree.body:
-            if isinstance(item, ast.ClassDef):
+            # --- DEPENDENCY: Standard Imports (import os) ---
+            if isinstance(item, ast.Import):
+                for alias in item.names:
+                    tx.run("""
+                        MATCH (m:Module {name: $file})
+                        MERGE (dep:Module {name: $dep_name})
+                        MERGE (m)-[:IMPORTS]->(dep)
+                    """, file=file_name, dep_name=alias.name)
+
+            # --- DEPENDENCY: From Imports (from x import y) ---
+            elif isinstance(item, ast.ImportFrom):
+                if item.module:
+                    tx.run("""
+                        MATCH (m:Module {name: $file})
+                        MERGE (dep:Module {name: $dep_name})
+                        MERGE (m)-[:IMPORTS]->(dep)
+                    """, file=file_name, dep_name=item.module)
+
+            # --- STRUCTURE: Classes ---
+            elif isinstance(item, ast.ClassDef):
                 tx.run("""
                     MATCH (m:Module {name: $file})
                     MERGE (c:Class {name: $name})
                     MERGE (m)-[:DEFINES]->(c)
                 """, file=file_name, name=item.name)
+
+            # --- STRUCTURE: Functions ---
             elif isinstance(item, ast.FunctionDef):
                 tx.run("""
                     MATCH (m:Module {name: $file})
@@ -52,30 +70,21 @@ class CodeGraphBuilder:
                 """, file=file_name, name=item.name)
 
     def build_from_directory(self, directory):
-        # 3. Validation: Check if folder actually exists
         if not os.path.exists(directory):
-            print(f"⚠️ Error: The directory '{directory}' does not exist!")
+            print(f"⚠️ Error: {directory} not found!")
             return
 
-        file_count = 0
+        print(f"🕸️ Building dependency graph for: {directory}")
         for root, _, files in os.walk(directory):
             for file in files:
                 if file.endswith(".py"):
                     full_path = os.path.join(root, file)
-                    print(f"🌲 Parsing AST for {file}...")
-                    self.parse_file_to_graph(full_path)
-                    file_count += 1
-        
-        if file_count == 0:
-            print("⚠️ Warning: No .py files were found in that directory.")
+                    self.parse_file_to_graph(full_path, directory)
+        print("✅ Graph build complete!")
 
 if __name__ == "__main__":
     builder = CodeGraphBuilder()
-    
-    # Updated to match the "repos" folder we created in main.py
-    # Change 'PWAI' to whatever repo you just cloned
-    repo_folder = "./repos/PWAI" 
-    
-    builder.build_from_directory(repo_folder)
+    # Ensure this path matches where main.py clones the repo
+    repo_to_analyze = "./repos/PWAI" 
+    builder.build_from_directory(repo_to_analyze)
     builder.close()
-    print("✅ Graph database build complete!")
