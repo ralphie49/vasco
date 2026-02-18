@@ -16,37 +16,42 @@ def remove_readonly(func, path, excinfo):
     func(path)
 
 class AdaptiveFaissAssistant:
-    def __init__(self, storage_dir="./faiss_index_storage"):
+    def __init__(self, storage_dir="./faiss_index_storage", repos_dir="./repos"):
         self.storage_dir = storage_dir
+        self.repos_dir = repos_dir
+        # Create the repos directory if it doesn't exist
+        if not os.path.exists(self.repos_dir):
+            os.makedirs(self.repos_dir)
+            
         self.embeddings = NVIDIAEmbeddings(model="nvidia/nv-embedcode-7b-v1")
         self.llm = ChatNVIDIA(model="meta/llama-3.3-70b-instruct")
         self.vector_db = None
-        self.current_k = 5  # Default k
+        self.current_k = 5
 
     def ingest_repository(self, repo_url):
         repo_name = repo_url.split("/")[-1].replace(".git", "")
         save_path = os.path.join(self.storage_dir, repo_name)
-        temp_repo = f"./temp_{repo_name}"
+        # CHANGED: Repos now live in a dedicated subfolder
+        repo_path = os.path.join(self.repos_dir, repo_name)
 
-        # 1. Quick Load from Cache
-        if os.path.exists(save_path):
-            print(f"⚡ Loading FAISS index for {repo_name}...")
+        # 1. Check if we can skip cloning/indexing
+        if os.path.exists(save_path) and os.path.exists(repo_path):
+            print(f"⚡ Loading existing FAISS index and local files for {repo_name}...")
             self.vector_db = FAISS.load_local(
                 save_path, self.embeddings, allow_dangerous_deserialization=True
             )
-            # Estimate k based on index size (simplified)
             self.current_k = 10 if self.vector_db.index.ntotal > 500 else 5
             return
 
-        # 2. Fresh Processing
-        if os.path.exists(temp_repo):
-            shutil.rmtree(temp_repo, onerror=remove_readonly)
+        # 2. Fresh Processing if files are missing
+        if os.path.exists(repo_path):
+            shutil.rmtree(repo_path, onerror=remove_readonly)
         
-        print(f"📥 Cloning {repo_url}...")
-        repo = Repo.clone_from(repo_url, temp_repo)
+        print(f"📥 Cloning {repo_url} into {repo_path}...")
+        repo = Repo.clone_from(repo_url, repo_path)
         
         loader = GitLoader(
-            repo_path=temp_repo,
+            repo_path=repo_path,
             branch=repo.active_branch.name,
             file_filter=lambda fp: fp.endswith((".py", ".js", ".ts", ".md", ".cpp"))
         )
@@ -55,13 +60,13 @@ class AdaptiveFaissAssistant:
 
         # --- AUTO-SCALING LOGIC ---
         if num_files > 150:
-            c_size, c_overlap, self.current_k = 600, 100, 12  # Precision mode
+            c_size, c_overlap, self.current_k = 600, 100, 12
             mode = "Large Scale (Precision)"
         elif num_files > 50:
-            c_size, c_overlap, self.current_k = 1000, 150, 8  # Balanced mode
+            c_size, c_overlap, self.current_k = 1000, 150, 8
             mode = "Medium Scale (Balanced)"
         else:
-            c_size, c_overlap, self.current_k = 1500, 200, 5  # Context mode
+            c_size, c_overlap, self.current_k = 1500, 200, 5
             mode = "Small Scale (Context-Heavy)"
         
         print(f"📊 Mode: {mode} | Files: {num_files} | Chunk Size: {c_size} | k: {self.current_k}")
@@ -78,11 +83,23 @@ class AdaptiveFaissAssistant:
         self.vector_db = FAISS.from_documents(chunks, self.embeddings)
         self.vector_db.save_local(save_path)
         
-        # Cleanup temp files
-        shutil.rmtree(temp_repo, onerror=remove_readonly)
+        # --- BUILD NEO4J GRAPH ---
+        print("🌲 Building AST Graph in Neo4j...")
+        try:
+            from graph_builder import CodeGraphBuilder
+            graph_builder = CodeGraphBuilder()
+            graph_builder.build_from_directory(repo_path)
+            graph_builder.close()
+        except ImportError:
+            print("⚠️ graph_builder.py not found. Skipping Neo4j step.")
+        except Exception as e:
+            print(f"❌ Neo4j Error: {e}")
+
         print("✅ Ingestion complete.")
 
     def query(self, user_question):
+        if not self.vector_db:
+            return "Please ingest a repository first."
         qa_chain = RetrievalQA.from_chain_type(
             llm=self.llm,
             chain_type="stuff",
@@ -98,9 +115,9 @@ if __name__ == "__main__":
     assistant.ingest_repository(repo_url)
     
     while True:
-        query = input("\n❓ Question (or 'exit'): ").strip()
-        if query.lower() in ['exit', 'quit']:
+        user_input = input("\n❓ Question (or 'exit'): ").strip()
+        if user_input.lower() in ['exit', 'quit']:
             break
         
         print("🔍 Searching and generating...")
-        print(f"\n🤖 AI:\n{assistant.query(query)}")
+        print(f"\n🤖 AI:\n{assistant.query(user_input)}")
