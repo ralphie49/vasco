@@ -6,11 +6,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class CodeGraphBuilder:
-    def __init__(self):
+    def __init__(self, repo_name):
         uri = os.getenv("NEO4J_URI", "bolt://localhost:7687")
         user = os.getenv("NEO4J_USER", "neo4j")
         password = os.getenv("NEO4J_PASSWORD")
         self.driver = GraphDatabase.driver(uri, auth=(user, password))
+        self.repo_name = repo_name # Track which repo we are in
 
     def close(self):
         self.driver.close()
@@ -23,68 +24,41 @@ class CodeGraphBuilder:
             print(f"❌ Could not read {file_path}: {e}")
             return
 
-        # Get relative path to use as a unique ID for the Module
         file_rel_path = os.path.relpath(file_path, base_repo_path).replace("\\", "/")
         
         with self.driver.session(database="neo4j") as session:
-            session.execute_write(self._create_elements, file_rel_path, tree)
+            session.execute_write(self._create_elements, file_rel_path, tree, self.repo_name)
 
     @staticmethod
-    def _create_elements(tx, file_name, tree):
-        # 1. Create/Update the current Module (File)
-        tx.run("MERGE (m:Module {name: $name})", name=file_name)
+    def _create_elements(tx, file_name, tree, repo_name):  # Added 4 spaces here
+        # 1. Create Module
+        tx.run("MERGE (m:Module {name: $file, repo: $repo_name})", 
+               file=file_name, repo_name=repo_name)
 
         for item in tree.body:
-            # --- DEPENDENCY: Standard Imports (import os) ---
-            if isinstance(item, ast.Import):
-                for alias in item.names:
-                    tx.run("""
-                        MATCH (m:Module {name: $file})
-                        MERGE (dep:Module {name: $dep_name})
-                        MERGE (m)-[:IMPORTS]->(dep)
-                    """, file=file_name, dep_name=alias.name)
-
-            # --- DEPENDENCY: From Imports (from x import y) ---
-            elif isinstance(item, ast.ImportFrom):
-                if item.module:
-                    tx.run("""
-                        MATCH (m:Module {name: $file})
-                        MERGE (dep:Module {name: $dep_name})
-                        MERGE (m)-[:IMPORTS]->(dep)
-                    """, file=file_name, dep_name=item.module)
-
-            # --- STRUCTURE: Classes ---
-            elif isinstance(item, ast.ClassDef):
+            # --- CLASSES ---
+            if isinstance(item, ast.ClassDef):
+                doc = ast.get_docstring(item) or "No description provided."
                 tx.run("""
-                    MATCH (m:Module {name: $file})
-                    MERGE (c:Class {name: $name})
+                    MATCH (m:Module {name: $file, repo: $repo_name})
+                    MERGE (c:Class {name: $name, repo: $repo_name, module: $file})
+                    SET c.description = $doc
                     MERGE (m)-[:DEFINES]->(c)
-                """, file=file_name, name=item.name)
+                """, file=file_name, name=item.name, repo_name=repo_name, doc=doc)
 
-            # --- STRUCTURE: Functions ---
+            # --- STANDALONE FUNCTIONS ---
             elif isinstance(item, ast.FunctionDef):
+                doc = ast.get_docstring(item) or "No description provided."
                 tx.run("""
-                    MATCH (m:Module {name: $file})
-                    MERGE (f:Function {name: $name})
+                    MATCH (m:Module {name: $file, repo: $repo_name})
+                    MERGE (f:Function {name: $name, repo: $repo_name, module: $file})
+                    SET f.description = $doc
                     MERGE (m)-[:DEFINES]->(f)
-                """, file=file_name, name=item.name)
+                """, file=file_name, name=item.name, repo_name=repo_name, doc=doc)
 
     def build_from_directory(self, directory):
-        if not os.path.exists(directory):
-            print(f"⚠️ Error: {directory} not found!")
-            return
-
-        print(f"🕸️ Building dependency graph for: {directory}")
+        print(f"🕸️ Building isolated graph for: {self.repo_name}")
         for root, _, files in os.walk(directory):
             for file in files:
                 if file.endswith(".py"):
-                    full_path = os.path.join(root, file)
-                    self.parse_file_to_graph(full_path, directory)
-        print("✅ Graph build complete!")
-
-if __name__ == "__main__":
-    builder = CodeGraphBuilder()
-    # Ensure this path matches where main.py clones the repo
-    repo_to_analyze = "./repos/PWAI" 
-    builder.build_from_directory(repo_to_analyze)
-    builder.close()
+                    self.parse_file_to_graph(os.path.join(root, file), directory)

@@ -35,13 +35,13 @@ class AdaptiveFaissAssistant:
         repo_path = os.path.join(self.repos_dir, repo_name)
 
         # 1. Check if we can skip cloning/indexing
-        if os.path.exists(save_path) and os.path.exists(repo_path):
+        """if os.path.exists(save_path) and os.path.exists(repo_path):
             print(f"⚡ Loading existing FAISS index and local files for {repo_name}...")
             self.vector_db = FAISS.load_local(
                 save_path, self.embeddings, allow_dangerous_deserialization=True
             )
             self.current_k = 10 if self.vector_db.index.ntotal > 500 else 5
-            return
+            return"""
 
         # 2. Fresh Processing if files are missing
         if os.path.exists(repo_path):
@@ -85,13 +85,13 @@ class AdaptiveFaissAssistant:
         
         # --- BUILD NEO4J GRAPH ---
         print("🌲 Building AST Graph in Neo4j...")
+        # --- BUILD NEO4J GRAPH ---
+        repo_name = repo_url.split("/")[-1].replace(".git", "") # Extract name from URL
         try:
             from graph_builder import CodeGraphBuilder
-            graph_builder = CodeGraphBuilder()
+            graph_builder = CodeGraphBuilder(repo_name=repo_name) # Pass the name here
             graph_builder.build_from_directory(repo_path)
             graph_builder.close()
-        except ImportError:
-            print("⚠️ graph_builder.py not found. Skipping Neo4j step.")
         except Exception as e:
             print(f"❌ Neo4j Error: {e}")
 
