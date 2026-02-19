@@ -3,15 +3,22 @@ import stat
 import shutil
 from dotenv import load_dotenv
 from git import Repo
+
+# AI and Vector Search Imports
 from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings, ChatNVIDIA
 from langchain_community.document_loaders import GitLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter, Language
 from langchain_community.vectorstores import FAISS
 from langchain_classic.chains import RetrievalQA
 
+# Local Module Imports
+from graph_builder import CodeGraphBuilder
+from auto_doc import RepoBookGenerator
+
 load_dotenv()
 
 def remove_readonly(func, path, excinfo):
+    """Helper to handle git's read-only file permissions during deletion."""
     os.chmod(path, stat.S_IWRITE)
     func(path)
 
@@ -19,105 +26,135 @@ class AdaptiveFaissAssistant:
     def __init__(self, storage_dir="./faiss_index_storage", repos_dir="./repos"):
         self.storage_dir = storage_dir
         self.repos_dir = repos_dir
-        # Create the repos directory if it doesn't exist
-        if not os.path.exists(self.repos_dir):
-            os.makedirs(self.repos_dir)
+        
+        # Ensure base directories exist
+        for d in [self.storage_dir, self.repos_dir]:
+            if not os.path.exists(d): 
+                os.makedirs(d)
             
         self.embeddings = NVIDIAEmbeddings(model="nvidia/nv-embedcode-7b-v1")
         self.llm = ChatNVIDIA(model="meta/llama-3.3-70b-instruct")
         self.vector_db = None
-        self.current_k = 5
+        self.current_repo = None
+
+    def load_repo(self, repo_name):
+        """Loads an existing FAISS index from disk for a specific repo."""
+        save_path = os.path.join(self.storage_dir, repo_name)
+        if os.path.exists(save_path):
+            print(f"🔄 Loading vector index for: {repo_name}...")
+            self.vector_db = FAISS.load_local(
+                save_path, 
+                self.embeddings, 
+                allow_dangerous_deserialization=True
+            )
+            self.current_repo = repo_name
+            return True
+        return False
 
     def ingest_repository(self, repo_url):
+        """Clones a repo, builds a FAISS index, and populates Neo4j."""
         repo_name = repo_url.split("/")[-1].replace(".git", "")
-        save_path = os.path.join(self.storage_dir, repo_name)
-        # CHANGED: Repos now live in a dedicated subfolder
         repo_path = os.path.join(self.repos_dir, repo_name)
+        save_path = os.path.join(self.storage_dir, repo_name)
 
-        # 1. Check if we can skip cloning/indexing
-        """if os.path.exists(save_path) and os.path.exists(repo_path):
-            print(f"⚡ Loading existing FAISS index and local files for {repo_name}...")
-            self.vector_db = FAISS.load_local(
-                save_path, self.embeddings, allow_dangerous_deserialization=True
-            )
-            self.current_k = 10 if self.vector_db.index.ntotal > 500 else 5
-            return"""
-
-        # 2. Fresh Processing if files are missing
+        # 1. Clean previous clone if it exists
         if os.path.exists(repo_path):
+            print(f"🧹 Cleaning up old files for {repo_name}...")
             shutil.rmtree(repo_path, onerror=remove_readonly)
         
-        print(f"📥 Cloning {repo_url} into {repo_path}...")
+        # 2. Clone Repository
+        print(f"📥 Cloning {repo_url}...")
         repo = Repo.clone_from(repo_url, repo_path)
         
+        # 3. Load and Split Code
         loader = GitLoader(
-            repo_path=repo_path,
-            branch=repo.active_branch.name,
-            file_filter=lambda fp: fp.endswith((".py", ".js", ".ts", ".md", ".cpp"))
+            repo_path=repo_path, 
+            branch=repo.active_branch.name, 
+            file_filter=lambda fp: fp.endswith((".py", ".md"))
         )
         documents = loader.load()
-        num_files = len(documents)
-
-        # --- AUTO-SCALING LOGIC ---
-        if num_files > 150:
-            c_size, c_overlap, self.current_k = 600, 100, 12
-            mode = "Large Scale (Precision)"
-        elif num_files > 50:
-            c_size, c_overlap, self.current_k = 1000, 150, 8
-            mode = "Medium Scale (Balanced)"
-        else:
-            c_size, c_overlap, self.current_k = 1500, 200, 5
-            mode = "Small Scale (Context-Heavy)"
-        
-        print(f"📊 Mode: {mode} | Files: {num_files} | Chunk Size: {c_size} | k: {self.current_k}")
 
         splitter = RecursiveCharacterTextSplitter.from_language(
             language=Language.PYTHON, 
-            chunk_size=c_size, 
-            chunk_overlap=c_overlap
+            chunk_size=1000, 
+            chunk_overlap=150
         )
         chunks = splitter.split_documents(documents)
 
-        # 3. FAISS Indexing
-        print(f"🧬 Creating FAISS index for {len(chunks)} chunks...")
+        # 4. Create and Save FAISS Index
+        print(f"🧬 Indexing {len(chunks)} chunks for {repo_name}...")
         self.vector_db = FAISS.from_documents(chunks, self.embeddings)
         self.vector_db.save_local(save_path)
-        
-        # --- BUILD NEO4J GRAPH ---
-        print("🌲 Building AST Graph in Neo4j...")
-        # --- BUILD NEO4J GRAPH ---
-        repo_name = repo_url.split("/")[-1].replace(".git", "") # Extract name from URL
-        try:
-            from graph_builder import CodeGraphBuilder
-            graph_builder = CodeGraphBuilder(repo_name=repo_name) # Pass the name here
-            graph_builder.build_from_directory(repo_path)
-            graph_builder.close()
-        except Exception as e:
-            print(f"❌ Neo4j Error: {e}")
+        self.current_repo = repo_name
 
-        print("✅ Ingestion complete.")
+        # 5. Build Neo4j Graph
+        print(f"🌲 Building Neo4j Graph for {repo_name}...")
+        try:
+            builder = CodeGraphBuilder(repo_name=repo_name)
+            # Add this print to verify the path exists
+            print(f"DEBUG: Looking for files in {repo_path}") 
+            builder.build_from_directory(repo_path)
+            builder.close()
+            print("✅ Graph Builder finished its job.")
+        except Exception as e:
+            print(f"❌ CRITICAL NEO4J ERROR: {e}")
+        
+        
+        print(f"✅ Ingestion of {repo_name} complete.")
 
     def query(self, user_question):
+        """Runs a RAG query against the currently loaded vector database."""
         if not self.vector_db:
-            return "Please ingest a repository first."
+            return "⚠️ No repository loaded. Please ingest or switch to a repo first."
+        
         qa_chain = RetrievalQA.from_chain_type(
-            llm=self.llm,
-            chain_type="stuff",
-            retriever=self.vector_db.as_retriever(search_kwargs={"k": self.current_k})
+            llm=self.llm, 
+            chain_type="stuff", 
+            retriever=self.vector_db.as_retriever()
         )
-        return qa_chain.invoke(user_question)["result"]
+        response = qa_chain.invoke(user_question)
+        return response["result"]
 
 if __name__ == "__main__":
     assistant = AdaptiveFaissAssistant()
-    
-    print("--- 🚀 NVIDIA ADAPTIVE FAISS ASSISTANT ---")
-    repo_url = input("🔗 Enter GitHub URL: ").strip()
-    assistant.ingest_repository(repo_url)
+    book_gen = RepoBookGenerator()
     
     while True:
-        user_input = input("\n❓ Question (or 'exit'): ").strip()
-        if user_input.lower() in ['exit', 'quit']:
-            break
+        status = f" [Active: {assistant.current_repo}]" if assistant.current_repo else " [No Repo Loaded]"
+        print(f"\n--- 🛠️ MULTI-REPO MANAGER{status} ---")
+        print("1. Ingest New Repository (GitHub URL)")
+        print("2. Switch/Load Existing Repository (Name)")
+        print("3. Generate Technical Reference Book (.md)")
+        print("4. Chat with Repository (Q&A)")
+        print("5. Exit")
         
-        print("🔍 Searching and generating...")
-        print(f"\n🤖 AI:\n{assistant.query(user_input)}")
+        choice = input("\nSelect an option (1-5): ").strip()
+
+        if choice == '1':
+            url = input("🔗 Enter GitHub URL: ").strip()
+            if url:
+                assistant.ingest_repository(url)
+        
+        elif choice == '2':
+            name = input("📂 Enter Repo Name to Load: ").strip()
+            if not assistant.load_repo(name):
+                print(f"❌ No index found for '{name}'. Please ingest it first.")
+        
+        elif choice == '3':
+            name = input("📖 Enter Repo Name to generate book for: ").strip()
+            # This uses Neo4j to build the book
+            book_gen.generate(name)
+            
+        elif choice == '4':
+            if not assistant.current_repo:
+                print("⚠️ Please load a repository (Option 2) before chatting.")
+                continue
+            question = input(f"❓ [{assistant.current_repo}] Question: ")
+            print(f"\n🔍 Searching context...\n\n🤖 AI:\n{assistant.query(question)}")
+
+        elif choice == '5':
+            print("👋 Goodbye!")
+            book_gen.close()
+            break
+        else:
+            print("Invalid choice, please try again.")
