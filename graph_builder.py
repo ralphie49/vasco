@@ -7,9 +7,7 @@ load_dotenv()
 
 class CodeGraphBuilder:
     def __init__(self, repo_name):
-        """
-        Initializes the connection to Neo4j and sets the current repository context.
-        """
+        """Initializes connection to Neo4j."""
         uri = os.getenv("NEO4J_URI", "bolt://localhost:7687")
         user = os.getenv("NEO4J_USER", "neo4j")
         password = os.getenv("NEO4J_PASSWORD")
@@ -18,22 +16,23 @@ class CodeGraphBuilder:
         self.repo_name = repo_name
 
     def close(self):
-        """Closes the Neo4j driver connection."""
         if self.driver:
             self.driver.close()
 
     def build_from_directory(self, directory):
-        """
-        Walks through the local directory, finds Python files, and parses them.
-        """
+        """Walks directory, parses code, and then links dependencies."""
         print(f"🕸️ Building isolated graph for: {self.repo_name}")
+        
+        # Step 1: Create all nodes
         for root, _, files in os.walk(directory):
             for file in files:
                 if file.endswith(".py"):
                     full_path = os.path.join(root, file)
-                    # Create a clean relative path for the node name
                     rel_path = os.path.relpath(full_path, directory).replace("\\", "/")
                     self.parse_file_to_graph(full_path, rel_path)
+        
+        # Step 2: Create relationships between nodes (Imports)
+        self.link_dependencies(directory)
 
     def parse_file_to_graph(self, full_path, rel_path):
         try:
@@ -41,43 +40,59 @@ class CodeGraphBuilder:
                 tree = ast.parse(f.read())
             
             with self.driver.session() as session:
-                # You MUST pass self.repo_name here as the third argument!
                 session.execute_write(self._create_elements, rel_path, tree, self.repo_name)
         except Exception as e:
             print(f"❌ Error parsing {rel_path}: {str(e)}")
-            
+
+    def link_dependencies(self, directory):
+        """Analyzes import statements to create DEPENDS_ON relationships."""
+        print("🔗 Analyzing module dependencies...")
+        for root, _, files in os.walk(directory):
+            for file in files:
+                if file.endswith(".py"):
+                    full_path = os.path.join(root, file)
+                    src_module = os.path.relpath(full_path, directory).replace("\\", "/")
+                    
+                    with open(full_path, "r", encoding="utf-8") as f:
+                        try:
+                            tree = ast.parse(f.read())
+                            for node in ast.walk(tree):
+                                target = None
+                                if isinstance(node, ast.Import):
+                                    target = node.names[0].name
+                                elif isinstance(node, ast.ImportFrom) and node.module:
+                                    target = node.module
+                                
+                                if target:
+                                    # Logic to match 'requests.models' to 'requests/models.py'
+                                    target_search = target.replace(".", "/")
+                                    with self.driver.session() as session:
+                                        session.run("""
+                                            MATCH (a:Module {name: $src, repo: $repo})
+                                            MATCH (b:Module {repo: $repo})
+                                            WHERE b.name CONTAINS $target
+                                            MERGE (a)-[:DEPENDS_ON]->(b)
+                                        """, src=src_module, target=target_search, repo=self.repo_name)
+                        except:
+                            continue
+
     @staticmethod
     def _create_elements(tx, file_name, tree, repo_name):
-        # 1. Create the Module (File) Node
-        tx.run("""
-            MERGE (m:Module {name: $file, repo: $repo})
-        """, file=file_name, repo=repo_name)
+        # Create Module
+        tx.run("MERGE (m:Module {name: $file, repo: $repo})", file=file_name, repo=repo_name)
 
         for item in tree.body:
-            # 2. Extract Classes
-            if isinstance(item, ast.ClassDef):
+            if isinstance(item, (ast.ClassDef, ast.FunctionDef)):
+                label = "Class" if isinstance(item, ast.ClassDef) else "Function"
                 doc = ast.get_docstring(item) or "No description provided."
-                tx.run("""
-                    MATCH (m:Module {name: $file, repo: $repo})
-                    MERGE (c:Class {name: $name, repo: $repo, module: $file})
+                tx.run(f"""
+                    MATCH (m:Module {{name: $file, repo: $repo}})
+                    MERGE (c:{label} {{name: $name, repo: $repo, module: $file}})
                     SET c.description = $doc
                     MERGE (m)-[:DEFINES]->(c)
                 """, file=file_name, name=item.name, repo=repo_name, doc=doc)
 
-            # 3. Extract Standalone Functions
-            elif isinstance(item, ast.FunctionDef):
-                doc = ast.get_docstring(item) or "No description provided."
-                tx.run("""
-                    MATCH (m:Module {name: $file, repo: $repo})
-                    MERGE (f:Function {name: $name, repo: $repo, module: $file})
-                    SET f.description = $doc
-                    MERGE (m)-[:DEFINES]->(f)
-                """, file=file_name, name=item.name, repo=repo_name, doc=doc)
-
-# Example usage (if run directly):
 if __name__ == "__main__":
-    # Ensure environment variables are loaded
-    test_repo = "test_project"
-    builder = CodeGraphBuilder(repo_name=test_repo)
-    # builder.build_from_directory("./path_to_code")
+    builder = CodeGraphBuilder(repo_name="manual_test")
+    # builder.build_from_directory("./your_code")
     builder.close()

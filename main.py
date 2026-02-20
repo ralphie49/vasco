@@ -13,7 +13,7 @@ from langchain_classic.chains import RetrievalQA
 
 # Local Module Imports
 from graph_builder import CodeGraphBuilder
-from auto_doc import RepoBookGenerator
+from auto_doc import RepoManualEngine
 
 load_dotenv()
 
@@ -117,7 +117,7 @@ class AdaptiveFaissAssistant:
 
 if __name__ == "__main__":
     assistant = AdaptiveFaissAssistant()
-    book_gen = RepoBookGenerator()
+    book_gen = RepoManualEngine()
     
     while True:
         status = f" [Active: {assistant.current_repo}]" if assistant.current_repo else " [No Repo Loaded]"

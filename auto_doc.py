@@ -1,13 +1,22 @@
 import os
 import re
+import time
+import random
 from neo4j import GraphDatabase
 from dotenv import load_dotenv
+from openai import OpenAI
 
 load_dotenv()
 
-class RepoBookGenerator:
+# --- AI Configuration (NVIDIA NIM) ---
+# This makes the "narrator" explain the code like a peer.
+client = OpenAI(
+    base_url="https://integrate.api.nvidia.com/v1",
+    api_key=os.getenv("NVIDIA_API_KEY")
+)
+
+class RepoManualEngine:
     def __init__(self):
-        """Initializes the Neo4j driver using environment variables."""
         uri = os.getenv("NEO4J_URI", "bolt://localhost:7687")
         user = os.getenv("NEO4J_USER", "neo4j")
         password = os.getenv("NEO4J_PASSWORD")
@@ -16,139 +25,111 @@ class RepoBookGenerator:
     def close(self):
         self.driver.close()
 
-    def clean_docs(self, text):
-        """Transforms raw Sphinx/reST docstrings into clean Markdown and truncates length."""
-        if not text or text == "No description provided.":
-            return "_No description available._"
+    def get_ai_narrative(self, name, docstring, type_label):
+        """Asks NVIDIA AI to explain the logic and 'why' behind the code."""
+        if not docstring or docstring == "No description provided.":
+            return f"The `{name}` {type_label} serves as a core logic block within this module."
+
+        prompt = f"""
+        Explain the purpose of this {type_label}: '{name}'.
+        Code Context/Docstring: {docstring}
         
-        # 1. Clean up Sphinx/reST tags
-        text = re.sub(r':[a-z]+ [^:]+:', '', text)
-        text = re.sub(r':[a-z]+:`~?\.?([^`<>]+)(?: <[^>]+>)?`', r'**\1**', text)
-        text = text.replace('::', ':')
+        Instruction: Explain what this does and WHY it exists in the system. 
+        Write 2-3 sentences. Do not use 'This is a class'. Speak directly about the logic.
+        """
 
-        # 2. Flatten line breaks and clean whitespace
-        lines = [line.strip() for line in text.split('\n')]
-        text = ' '.join(lines)
-        text = re.sub(r'\s+', ' ', text).strip()
-        
-        # 3. Truncate for the "Executive Summary" feel (approx 300 chars)
-        if len(text) > 300:
-            text = text[:300] + "..."
-            
-        return text
+        # Retry logic for NVIDIA 429 Rate Limits
+        for attempt in range(5):
+            try:
+                completion = client.chat.completions.create(
+                    model="meta/llama-3.1-405b-instruct",
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.4,
+                    max_tokens=200
+                )
+                return completion.choices[0].message.content.strip()
+            except Exception as e:
+                if "429" in str(e):
+                    time.sleep((2 ** attempt) + random.random())
+                else:
+                    return f"Logic Detail: {docstring[:150]}..."
+        return "Explanation timeout."
 
-    def get_repo_stats(self, repo_name):
-        """Fetches total counts for the specific repository, excluding tests."""
-        with self.driver.session() as session:
-            query = """
-            MATCH (n {repo: $repo_name})
-            WHERE NOT n.name CONTAINS 'test'
-            RETURN 
-                count(DISTINCT CASE WHEN n:Module THEN n END) as modules,
-                count(DISTINCT CASE WHEN n:Class THEN n END) as classes,
-                count(DISTINCT CASE WHEN n:Function THEN n END) as functions
-            """
-            return session.run(query, repo_name=repo_name).single()
-
-    def generate(self, repo_name):
-        """Generates the Markdown book for a specific repository."""
-        stats = self.get_repo_stats(repo_name)
+    def generate_book(self, repo_name):
+        print(f"📖 Authoring the Complete Technical Manual for: {repo_name}")
         
         with self.driver.session() as session:
-            # Query targets specific repo and categorizes modules into chapters
+            # Query to get every file, its components, and who it talks to (graphs)
             query = """
             MATCH (m:Module {repo: $repo_name})
-            WHERE NOT m.name CONTAINS 'test'
+            WHERE NOT m.name CONTAINS 'test' AND NOT m.name CONTAINS '__init__'
             
             OPTIONAL MATCH (m)-[:DEFINES]->(item)
             WITH m, item, labels(item)[0] AS type
             WITH m, collect({name: item.name, type: type, desc: item.description}) AS components
             
-            RETURN m.name AS file, 
-                   components,
+            OPTIONAL MATCH (m)<-[:DEPENDS_ON]-(other)
+            WITH m, components, count(distinct other) as inbound
+            OPTIONAL MATCH (m)-[:DEPENDS_ON]->(target)
+            WITH m, components, inbound, collect(distinct target.name) as outbound_names
+            
+            RETURN m.name AS file, components, inbound, outbound_names,
                    CASE 
-                     WHEN m.name CONTAINS 'api' OR m.name CONTAINS 'sessions' THEN 'Ch 1: The Gateway (API & Core)'
-                     WHEN m.name CONTAINS 'models' OR m.name CONTAINS 'structures' THEN 'Ch 2: The Skeleton (Data Models)'
-                     WHEN m.name CONTAINS 'util' OR m.name CONTAINS 'helper' THEN 'Ch 3: The Toolbelt (Utilities)'
-                     ELSE 'Ch 4: Supporting Infrastructure'
-                   END AS chapter,
-                   COUNT { (m)<-[:IMPORTS]-() } AS importance 
-            ORDER BY chapter ASC, importance DESC
+                     WHEN m.name CONTAINS '/' THEN split(m.name, '/')[0] 
+                     ELSE 'Core Operations'
+                   END AS folder_group
+            ORDER BY folder_group ASC, inbound DESC
             """
-            data = session.run(query, repo_name=repo_name).data()
+            results = session.run(query, repo_name=repo_name).data()
 
-        if not data:
-            print(f"⚠️ Repo '{repo_name}' not found in Neo4j. Check case sensitivity.")
+        if not results:
+            print("❌ No data found. Ensure you have ingested the repo first.")
             return
 
-        filename = f"{repo_name.upper()}_THE_BOOK.md"
-        book = {}
-        for rec in data:
-            book.setdefault(rec['chapter'], []).append(rec)
-
+        filename = f"{repo_name.upper()}_TECHNICAL_MANUAL.md"
+        
         with open(filename, "w", encoding="utf-8") as f:
-            # --- COVER PAGE ---
-            f.write(f"# 📖 {repo_name.upper()}: Technical Reference\n\n")
-            f.write(f"## 📊 Project at a Glance\n")
-            f.write(f"- **Core Modules:** {stats['modules']}\n")
-            f.write(f"- **Documented Classes:** {stats['classes']}\n")
-            f.write(f"- **Key Functions:** {stats['functions']}\n\n")
-            f.write('<div style="page-break-after: always;"></div>\n\n')
+            # --- 1. THE FRONT MATTER ---
+            f.write(f"# 📘 {repo_name.upper()}: Technical Architecture & Logic Reference\n")
+            f.write("## An exhaustive guide to every file, connection, and code block.\n\n")
+            f.write("---\n")
 
-            # --- TABLE OF CONTENTS ---
-            f.write("## 📑 Table of Contents\n")
-            for ch in sorted(book.keys()):
-                anchor = ch.lower().replace(" ", "-").replace(":", "").replace("(", "").replace(")", "")
-                f.write(f"- [{ch}](#{anchor})\n")
-            f.write('\n<div style="page-break-after: always;"></div>\n\n')
-
-            # --- CHAPTERS ---
-            chapters = sorted(book.items())
-            for i, (ch_title, modules) in enumerate(chapters):
-                f.write(f"## {ch_title}\n")
+            # --- 2. THE CHAPTERS (FILES) ---
+            for res in results:
+                f.write(f"## 📄 File: `{res['file']}`\n")
                 
-                # Mermaid Diagram for Chapter
-                f.write("### 📉 Chapter Architecture\n")
+                # --- 3. THE GRAPH SECTION ---
+                # We use Mermaid.js to render the graph inside the Markdown book
+                f.write("### 📉 Dependency Graph\n")
                 f.write("```mermaid\ngraph LR\n")
-                for mod in modules[:5]: 
-                    # Clean filename for Mermaid syntax compatibility
-                    clean_id = re.sub(r'[^a-zA-Z0-9]', '_', mod['file'].split('/')[-1].replace('.py',''))
-                    f.write(f"    {clean_id} --> Imp_{mod['importance']}[Impact Score: {mod['importance']}]\n")
-                f.write("```\n\n")
+                this_file = res['file'].split('/')[-1].replace('.py','')
+                if res['outbound_names']:
+                    for target in res['outbound_names']:
+                        target_file = target.split('/')[-1].replace('.py','')
+                        f.write(f"    {this_file} --> {target_file}\n")
+                else:
+                    f.write(f"    {this_file}\n")
+                f.write("```\n")
+                f.write(f"*This module is a dependency for **{res['inbound']}** other parts of the system.*\n\n")
 
-                for mod in modules:
-                    f.write(f"### 📄 Module: `{mod['file']}`\n")
+                # --- 4. THE CODE EXPLANATIONS ---
+                f.write("### 🛠️ Code Logic Breakdown\n")
+                
+                for c in res['components']:
+                    label = "Class" if str(c['type']).lower() == 'class' else "Function"
+                    f.write(f"#### 🔹 {label}: `{c['name']}`\n")
                     
-                    classes = [c for c in mod['components'] if str(c['type']).lower() == 'class']
-                    funcs = [c for c in mod['components'] if str(c['type']).lower() == 'function']
+                    # AI Narrator explains the code
+                    explanation = self.get_ai_narrative(c['name'], c['desc'], label)
+                    f.write(f"{explanation}\n\n")
+                
+                f.write("---\n")
+                f.write('<div style="page-break-after: always;"></div>\n\n')
 
-                    if classes:
-                        f.write("#### 🏛️ Classes\n")
-                        for c in classes[:5]:
-                            clean_desc = self.clean_docs(c.get('desc'))
-                            f.write(f"- **`{c['name']}`**: {clean_desc}\n")
-                        f.write("\n")
-
-                    if funcs:
-                        f.write("#### ⚙️ Logic\n")
-                        for fn in funcs[:3]:
-                            clean_desc = self.clean_docs(fn.get('desc'))
-                            f.write(f"- **`{fn['name']}`**: {clean_desc}\n")
-                        if len(funcs) > 3:
-                            others = ", ".join([f"`{fn['name']}`" for fn in funcs[3:12]])
-                            f.write(f"\n*Includes:* {others}...\n")
-                    
-                    f.write("\n---\n")
-
-                if i < len(chapters) - 1:
-                    f.write('\n<div style="page-break-after: always;"></div>\n\n')
-
-        print(f"✅ Book successfully generated: {filename}")
+        print(f"✅ Manual authored: {filename}")
 
 if __name__ == "__main__":
-    gen = RepoBookGenerator()
-    target = input("Which repo would you like to bind into a book? ").strip()
-    try:
-        gen.generate(target)
-    finally:
-        gen.close()
+    engine = RepoManualEngine()
+    repo = input("Enter repo name: ").strip()
+    engine.generate_book(repo)
+    engine.close()
