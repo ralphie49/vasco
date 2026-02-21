@@ -1,5 +1,6 @@
 import os
-import time
+import json
+import re
 from neo4j import GraphDatabase
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -17,117 +18,160 @@ class RepoManualEngine:
         user = os.getenv("NEO4J_USER", "neo4j")
         password = os.getenv("NEO4J_PASSWORD")
         self.driver = GraphDatabase.driver(uri, auth=(user, password))
-        self.output_dir = "./output_docs"
-        if not os.path.exists(self.output_dir): 
+        self.output_dir = "./generated_docs"
+        if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
 
     def close(self):
         self.driver.close()
 
-    def ask_ai(self, prompt, style="architect"):
-        """Queries the AI using a persona that avoids hesitant language."""
-        styles = {
-            "architect": "You are a Senior Software Architect. Write in a confident, declarative, and technical tone. Avoid phrases like 'based on the provided info', 'maybe', or 'it seems'. Speak in the present tense.",
-            "manual": "You are a technical writer for high-end engineering manuals. Use structured, authoritative language. Do not use first-person ('I') or hedge words."
+    def ask_ai(self, prompt, system_persona="architect", json_mode=False):
+        personas = {
+            "architect": "You are a Senior Lead Systems Architect. Use assertive, technical, and declarative language. Focus on design patterns and structural integrity. No basic explanations.",
+            "writer": "You are a lead technical specification author. Provide high-density technical specifications. Avoid introductory filler."
         }
         
         try:
+            response_format = {"type": "json_object"} if json_mode else None
             completion = client.chat.completions.create(
                 model="meta/llama-3.1-405b-instruct",
                 messages=[
-                    {"role": "system", "content": styles.get(style, styles["architect"])},
+                    {"role": "system", "content": personas.get(system_persona, personas["architect"])},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.8 # Lower temperature for higher confidence/consistency
+                temperature=0.2, 
+                response_format=response_format
             )
             return completion.choices[0].message.content.strip()
-        except Exception:
-            return "Reference data unavailable."
+        except Exception as e:
+            print(f"AI Error: {e}")
+            return None
 
-    def generate_book(self, repo_name):
-        print(f"📚 Publishing Authoritative Manual: {repo_name}")
-        
+    def get_graph_context(self, repo_name):
+        """Extracts metadata using modern Neo4j syntax."""
         with self.driver.session() as session:
+            # Updated size() to COUNT { (pattern) } for Neo4j 5 compatibility
             query = """
             MATCH (f:File {repo: $repo_name})
-            WHERE NOT f.name CONTAINS 'node_modules'
             OPTIONAL MATCH (f)-[:DEFINES]->(item)
-            WITH f, collect({name: item.name, type: labels(item)[0], desc: item.description}) AS items
             OPTIONAL MATCH (f)-[:DEPENDS_ON]->(dep)
-            RETURN f.name AS file, f.extension AS ext, items, collect(dep.name) AS deps
-            ORDER BY size(deps) DESC, file ASC
+            RETURN f.name AS path, 
+                   f.extension AS ext, 
+                   collect(DISTINCT item.name) AS symbols,
+                   collect(DISTINCT dep.name) AS dependencies,
+                   COUNT { (f)-[:DEPENDS_ON]->() } as out_degree,
+                   COUNT { (f)<-[:DEPENDS_ON]-() } as in_degree
             """
-            results = session.run(query, repo_name=repo_name).data()
+            return session.run(query, repo_name=repo_name).data()
 
-        if not results:
-            print("❌ No data found.")
+    def clean_json_response(self, text):
+        if not text: return []
+        try:
+            match = re.search(r'(\[.*\]|\{.*\})', text, re.DOTALL)
+            if match:
+                data = json.loads(match.group(0))
+                return data["chapters"] if isinstance(data, dict) and "chapters" in data else data
+            return json.loads(text)
+        except:
+            return []
+
+    def generate_documentation(self, repo_name):
+        print(f"📡 Analyzing Graph Topology for {repo_name}...")
+        all_metadata = self.get_graph_context(repo_name)
+        
+        if not all_metadata:
+            print(f"❌ No graph data for: {repo_name}")
             return
 
-        # DYNAMIC ENTRY POINT DETECTION
-        all_files = [r['file'] for r in results]
-        identity_prompt = f"Analyze this file list: {all_files[:20]}. Identify the primary ENTRY file and the primary CORE logic file. Format: ENTRY:filename, CORE:filename"
-        identity = self.ask_ai(identity_prompt)
-        
-        try:
-            entry_file = identity.split("ENTRY:")[1].split(",")[0].strip()
-            core_file = identity.split("CORE:")[1].strip()
-        except:
-            entry_file = results[0]['file']
-            core_file = results[1]['file'] if len(results) > 1 else entry_file
+        # Sort by total connectivity to identify potential entry points
+        sorted_metadata = sorted(all_metadata, key=lambda x: x['in_degree'] + x['out_degree'], reverse=True)
+        context_summary = "\n".join([
+            f"File: {m['path']} | Connects: {m['in_degree'] + m['out_degree']} | Symbols: {m['symbols'][:5]}"
+            for m in sorted_metadata
+        ])
 
-        full_path = os.path.join(self.output_dir, f"{repo_name.upper()}_TECHNICAL_MANUAL.md")
-        
-        with open(full_path, "w", encoding="utf-8") as book:
-            # CHAPTER 1: DESIGN PHILOSOPHY
-            book.write(f"# 📖 {repo_name.upper()} | Engineering Specification\n\n")
-            book.write("## 01. Architectural Design\n")
-            summary_prompt = f"Explain the purpose and architectural pattern of a project containing these files: {all_files[:12]}. Start directly with the definition."
-            book.write(f"{self.ask_ai(summary_prompt, 'manual')}\n\n")
+        toc_prompt = f"""
+        Repository: {repo_name}
+        Context: {context_summary}
 
-            # CHAPTER 2: EXECUTION FLOW
-            book.write("## 02. System Workflow\n")
-            book.write("The following diagram outlines the high-level call sequence and module dependencies.\n\n")
-            book.write("```mermaid\nsequenceDiagram\n  autonumber\n")
-            book.write(f"  Note over {entry_file.replace('.','_')}, {core_file.replace('.','_')}: Critical Path\n")
+        TASK:
+        Create a 6-chapter Engineering Manual structure.
+        - Chapter 1 MUST be 'Architectural Blueprint' focusing on the high-connectivity orchestrators.
+        - Group remaining files by logical domain.
+        
+        RETURN ONLY a JSON object:
+        {{ "chapters": [ {{ "chapter_num": 1, "title": "Architectural Blueprint", "objective": "Global topology", "focus_files": ["..."] }}, ... ] }}
+        """
+        
+        toc_response = self.ask_ai(toc_prompt, json_mode=True)
+        chapters = self.clean_json_response(toc_response)
+
+        full_path = os.path.join(self.output_dir, f"{repo_name.upper()}_TECHNICAL_SPEC.md")
+        
+        with open(full_path, "w", encoding="utf-8") as doc:
+            # Print styles for Page Breaks
+            doc.write("<style> .page-break { page-break-before: always; } </style>\n\n")
             
-            for res in results[:12]:
-                fid = res['file'].replace('.','_').replace('/','_')
-                for d in res['deps']:
-                    did = d.replace('.','_').replace('/','_')
-                    book.write(f"  {fid}->>{did}: invokes\n")
-            book.write("```\n\n---\n")
+            doc.write(f"# 📘 {repo_name.upper()} | Engineering Specification\n\n")
+            doc.write(f"**Document Status:** Confidential / Internal Engineering\n")
+            doc.write(f"**Analysis Method:** Autonomous Graph Synthesis\n\n")
+            doc.write("> This manual prioritizes structural connectivity and system orchestration patterns.\n\n")
 
-            # CHAPTER 3: MODULE SPECIFICATIONS
-            book.write("## 03. Module Deep-Dive\n")
-            for i, res in enumerate(results, 1):
-                book.write(f"### 3.{i} `{res['file']}`\n")
+            for chapter in chapters:
+                if not isinstance(chapter, dict): continue
+                c_num = chapter.get('chapter_num')
                 
-                # Logic Analysis - No guessing allowed
-                if res['ext'] in ['py', 'js', 'java', 'ts', 'cpp']:
-                    logic_prompt = f"Define the execution logic for the module `{res['file']}`. It contains these symbols: {res['items']}. Focus on how it processes data."
+                # FORCE PAGE BREAK BEFORE EVERY CHAPTER
+                doc.write('\n<div class="page-break"></div>\n\n')
+
+                c_title = chapter.get('title')
+                c_files = chapter.get('focus_files', [])
+                
+                print(f"✍️ Compiling Chapter {c_num}: {c_title}...")
+                specific_metadata = [m for m in all_metadata if m['path'] in c_files]
+                
+                if c_num == 1:
+                    write_prompt = f"""
+                    Write Chapter 1: '{c_title}'.
+                    Data: {json.dumps(specific_metadata)}
+                    
+                    REQUIREMENTS:
+                    - Start with a 'System Topology' section.
+                    - Define the core orchestration pattern found in these files.
+                    - Do NOT discuss README, .gitignore, or environment setup.
+                    - Identify the primary entry point and its downstream impact.
+                    - Use ASSERTIVE Architect persona.
+                    """
                 else:
-                    logic_prompt = f"Define the role of `{res['file']}` within the project infrastructure."
+                    write_prompt = f"""
+                    Write Chapter {c_num}: {c_title}.
+                    Context: {json.dumps(specific_metadata)}
+                    Instructions: High-density technical breakdown of implementation details.
+                    """
                 
-                book.write(f"{self.ask_ai(logic_prompt, 'architect')}\n\n")
+                chapter_body = self.ask_ai(write_prompt, "architect" if c_num == 1 else "writer")
+                doc.write(f"## {c_num}. {c_title}\n\n")
+                doc.write(f"{chapter_body}\n\n")
 
-                # Table with Dynamic Fallback (Live Terminal-style Querying)
-                if res['items'] and any(item['name'] for item in res['items']):
-                    book.write("| Component | Type | Responsibility |\n| :--- | :--- | :--- |\n")
-                    for item in res['items']:
-                        if not item['name']: continue
-                        
-                        desc = item['desc']
-                        # If description is missing ("No description thing"), query the AI just like the terminal!
-                        if not desc or desc == "None" or "No description" in desc:
-                            desc = self.ask_ai(f"Define the specific responsibility of the {item['type']} `{item['name']}` in the {repo_name} system.")
-                        
-                        book.write(f"| `{item['name']}` | {item['type']} | {desc} |\n")
-                book.write("\n---\n")
+            # --- APPENDIX ---
+            doc.write('\n<div class="page-break"></div>\n\n')
+            doc.write("## Appendix: Module Dependency Graph\n\n")
+            doc.write("```mermaid\ngraph TD\n")
+            for m in all_metadata:
+                if m['dependencies']:
+                    origin = m['path'].replace(".", "_").replace("/", "_").replace("-","_")
+                    for d in m['dependencies'][:2]:
+                        target = d.replace(".", "_").replace("/", "_").replace("-","_")
+                        doc.write(f"  {origin} --> {target}\n")
+            doc.write("```\n")
 
-        print(f"✅ Authoritative Book Generated: {full_path}")
+        print(f"✅ Success: Manual generated at {full_path}")
+
+    def generate_book(self, repo_name):
+        return self.generate_documentation(repo_name)
 
 if __name__ == "__main__":
     engine = RepoManualEngine()
     repo = input("Enter repo name: ").strip()
-    engine.generate_book(repo)
+    engine.generate_documentation(repo)
     engine.close()
