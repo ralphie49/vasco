@@ -1,5 +1,6 @@
 import os
 import json
+from pydoc import doc
 import re
 from neo4j import GraphDatabase
 from dotenv import load_dotenv
@@ -39,7 +40,8 @@ class RepoManualEngine:
                     {"role": "system", "content": personas.get(system_persona, personas["architect"])},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.2, 
+                temperature=0.5, 
+                # Note: temperature slightly increased per your snippet
                 response_format=response_format
             )
             return completion.choices[0].message.content.strip()
@@ -50,7 +52,6 @@ class RepoManualEngine:
     def get_graph_context(self, repo_name):
         """Extracts metadata using modern Neo4j syntax."""
         with self.driver.session() as session:
-            # Updated size() to COUNT { (pattern) } for Neo4j 5 compatibility
             query = """
             MATCH (f:File {repo: $repo_name})
             OPTIONAL MATCH (f)-[:DEFINES]->(item)
@@ -83,7 +84,6 @@ class RepoManualEngine:
             print(f"❌ No graph data for: {repo_name}")
             return
 
-        # Sort by total connectivity to identify potential entry points
         sorted_metadata = sorted(all_metadata, key=lambda x: x['in_degree'] + x['out_degree'], reverse=True)
         context_summary = "\n".join([
             f"File: {m['path']} | Connects: {m['in_degree'] + m['out_degree']} | Symbols: {m['symbols'][:5]}"
@@ -109,19 +109,51 @@ class RepoManualEngine:
         full_path = os.path.join(self.output_dir, f"{repo_name.upper()}_TECHNICAL_SPEC.md")
         
         with open(full_path, "w", encoding="utf-8") as doc:
-            # Print styles for Page Breaks
-            doc.write("<style> .page-break { page-break-before: always; } </style>\n\n")
+            # CSS for Big Font and Page Breaks
+            doc.write("""<style>
+                .page-break { page-break-before: always; }
+                .cover-page {
+                    text-align: center;
+                    padding-top: 250px;
+                    padding-bottom: 250px;
+                    font-family: sans-serif;
+                }
+                .repo-title {
+                    font-size: 80px;
+                    font-weight: 900;
+                    margin: 0;
+                    color: #1a1a1a;
+                    text-transform: uppercase;
+                    line-height: 1;
+                }
+                .repo-subtitle {
+                    font-size: 24px;
+                    color: #666;
+                    margin-top: 10px;
+                    letter-spacing: 2px;
+                }
+                .repo-meta {
+                    margin-top: 50px;
+                    font-size: 16px;
+                    color: #888;
+                }
+            </style>\n\n""")
             
-            doc.write(f"# 📘 {repo_name.upper()} | Engineering Specification\n\n")
-            doc.write(f"**Document Status:** Confidential / Internal Engineering\n")
-            doc.write(f"**Analysis Method:** Autonomous Graph Synthesis\n\n")
-            doc.write("> This manual prioritizes structural connectivity and system orchestration patterns.\n\n")
-
+            # --- FIRST PAGE: GIANT CENTERED REPO NAME ---
+            doc.write(f"<div class='cover-page'>\n\n")
+            doc.write(f"<h1 class='repo-title'>{repo_name.upper()}</h1>\n")
+            doc.write(f"<p class='repo-subtitle'>Engineering Specification & Architectural Manual</p>\n")
+            doc.write(f"<div class='repo-meta'>\n")
+            doc.write(f"<p>CONFIDENTIAL | INTERNAL ENGINEERING USE ONLY</p>\n")
+            doc.write(f"<p>Generated: 2026-02-21</p>\n")
+            doc.write(f"</div>\n")
+            doc.write(f"</div>\n")
+            # --- GENERATE CHAPTERS (STARTING FROM NEXT PAGE) ---
             for chapter in chapters:
                 if not isinstance(chapter, dict): continue
                 c_num = chapter.get('chapter_num')
                 
-                # FORCE PAGE BREAK BEFORE EVERY CHAPTER
+                # FORCE PAGE BREAK BEFORE EVERY CHAPTER (Including Chapter 1)
                 doc.write('\n<div class="page-break"></div>\n\n')
 
                 c_title = chapter.get('title')
