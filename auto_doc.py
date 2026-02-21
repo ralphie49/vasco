@@ -1,6 +1,5 @@
 import os
 import json
-from pydoc import doc
 import re
 from neo4j import GraphDatabase
 from dotenv import load_dotenv
@@ -41,7 +40,6 @@ class RepoManualEngine:
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.5, 
-                # Note: temperature slightly increased per your snippet
                 response_format=response_format
             )
             return completion.choices[0].message.content.strip()
@@ -95,8 +93,8 @@ class RepoManualEngine:
         Context: {context_summary}
 
         TASK:
-        Create a 6-chapter Engineering Manual structure.
-        - Chapter 1 MUST be 'Architectural Blueprint' focusing on the high-connectivity orchestrators.
+        Create a 3-chapter Engineering Manual structure.
+        - Chapter 1 MUST be 'Architectural Blueprint'.
         - Group remaining files by logical domain.
         
         RETURN ONLY a JSON object:
@@ -109,7 +107,7 @@ class RepoManualEngine:
         full_path = os.path.join(self.output_dir, f"{repo_name.upper()}_TECHNICAL_SPEC.md")
         
         with open(full_path, "w", encoding="utf-8") as doc:
-            # CSS for Big Font and Page Breaks
+            # 1. BULLEPROOF CSS INJECTION
             doc.write("""<style>
                 .page-break { page-break-before: always; }
                 .cover-page {
@@ -139,7 +137,7 @@ class RepoManualEngine:
                 }
             </style>\n\n""")
             
-            # --- FIRST PAGE: GIANT CENTERED REPO NAME ---
+            # 2. HERO COVER PAGE
             doc.write(f"<div class='cover-page'>\n\n")
             doc.write(f"<h1 class='repo-title'>{repo_name.upper()}</h1>\n")
             doc.write(f"<p class='repo-subtitle'>Engineering Specification & Architectural Manual</p>\n")
@@ -148,12 +146,13 @@ class RepoManualEngine:
             doc.write(f"<p>Generated: 2026-02-21</p>\n")
             doc.write(f"</div>\n")
             doc.write(f"</div>\n")
-            # --- GENERATE CHAPTERS (STARTING FROM NEXT PAGE) ---
+
+            # 3. CHAPTER LOGIC WITH FORCED PAGE BREAKS
             for chapter in chapters:
                 if not isinstance(chapter, dict): continue
                 c_num = chapter.get('chapter_num')
                 
-                # FORCE PAGE BREAK BEFORE EVERY CHAPTER (Including Chapter 1)
+                # Force every chapter to start on a new page
                 doc.write('\n<div class="page-break"></div>\n\n')
 
                 c_title = chapter.get('title')
@@ -163,29 +162,15 @@ class RepoManualEngine:
                 specific_metadata = [m for m in all_metadata if m['path'] in c_files]
                 
                 if c_num == 1:
-                    write_prompt = f"""
-                    Write Chapter 1: '{c_title}'.
-                    Data: {json.dumps(specific_metadata)}
-                    
-                    REQUIREMENTS:
-                    - Start with a 'System Topology' section.
-                    - Define the core orchestration pattern found in these files.
-                    - Do NOT discuss README, .gitignore, or environment setup.
-                    - Identify the primary entry point and its downstream impact.
-                    - Use ASSERTIVE Architect persona.
-                    """
+                    write_prompt = f"Write Chapter 1: '{c_title}'. Focus on Topology and Orchestration for {repo_name}. Data: {json.dumps(specific_metadata)}"
                 else:
-                    write_prompt = f"""
-                    Write Chapter {c_num}: {c_title}.
-                    Context: {json.dumps(specific_metadata)}
-                    Instructions: High-density technical breakdown of implementation details.
-                    """
+                    write_prompt = f"Write Chapter {c_num}: {c_title}. Detailed technical breakdown for {repo_name}. Data: {json.dumps(specific_metadata)}"
                 
                 chapter_body = self.ask_ai(write_prompt, "architect" if c_num == 1 else "writer")
                 doc.write(f"## {c_num}. {c_title}\n\n")
                 doc.write(f"{chapter_body}\n\n")
 
-            # --- APPENDIX ---
+            # 4. APPENDIX & MERMAID GRAPH
             doc.write('\n<div class="page-break"></div>\n\n')
             doc.write("## Appendix: Module Dependency Graph\n\n")
             doc.write("```mermaid\ngraph TD\n")

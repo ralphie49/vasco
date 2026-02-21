@@ -6,6 +6,5 @@ that's it!
 MATCH (n)
 DETACH DELETE n
 
-MATCH (n)-[r:DEPENDS_ON]->(m)
+MATCH (n)-[r]->(m)
 RETURN n, r, m
-
