@@ -29,7 +29,6 @@ repo_cache/
 env/
 venv/
 ENV/
-
 # OS Specific
 .DS_Store
 Thumbs.db

@@ -1,15 +1,11 @@
 import os
-import re
 import time
-import random
 from neo4j import GraphDatabase
 from dotenv import load_dotenv
 from openai import OpenAI
 
 load_dotenv()
 
-# --- AI Configuration (NVIDIA NIM) ---
-# This makes the "narrator" explain the code like a peer.
 client = OpenAI(
     base_url="https://integrate.api.nvidia.com/v1",
     api_key=os.getenv("NVIDIA_API_KEY")
@@ -21,112 +17,114 @@ class RepoManualEngine:
         user = os.getenv("NEO4J_USER", "neo4j")
         password = os.getenv("NEO4J_PASSWORD")
         self.driver = GraphDatabase.driver(uri, auth=(user, password))
+        self.output_dir = "./output_docs"
+        if not os.path.exists(self.output_dir): 
+            os.makedirs(self.output_dir)
 
     def close(self):
         self.driver.close()
 
-    def get_ai_narrative(self, name, docstring, type_label):
-        """Asks NVIDIA AI to explain the logic and 'why' behind the code."""
-        if not docstring or docstring == "No description provided.":
-            return f"The `{name}` {type_label} serves as a core logic block within this module."
-
-        prompt = f"""
-        Explain the purpose of this {type_label}: '{name}'.
-        Code Context/Docstring: {docstring}
+    def ask_ai(self, prompt, style="architect"):
+        """Queries the AI using a persona that avoids hesitant language."""
+        styles = {
+            "architect": "You are a Senior Software Architect. Write in a confident, declarative, and technical tone. Avoid phrases like 'based on the provided info', 'maybe', or 'it seems'. Speak in the present tense.",
+            "manual": "You are a technical writer for high-end engineering manuals. Use structured, authoritative language. Do not use first-person ('I') or hedge words."
+        }
         
-        Instruction: Explain what this does and WHY it exists in the system. 
-        Write 2-3 sentences. Do not use 'This is a class'. Speak directly about the logic.
-        """
-
-        # Retry logic for NVIDIA 429 Rate Limits
-        for attempt in range(5):
-            try:
-                completion = client.chat.completions.create(
-                    model="meta/llama-3.1-405b-instruct",
-                    messages=[{"role": "user", "content": prompt}],
-                    temperature=0.4,
-                    max_tokens=200
-                )
-                return completion.choices[0].message.content.strip()
-            except Exception as e:
-                if "429" in str(e):
-                    time.sleep((2 ** attempt) + random.random())
-                else:
-                    return f"Logic Detail: {docstring[:150]}..."
-        return "Explanation timeout."
+        try:
+            completion = client.chat.completions.create(
+                model="meta/llama-3.1-405b-instruct",
+                messages=[
+                    {"role": "system", "content": styles.get(style, styles["architect"])},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.8 # Lower temperature for higher confidence/consistency
+            )
+            return completion.choices[0].message.content.strip()
+        except Exception:
+            return "Reference data unavailable."
 
     def generate_book(self, repo_name):
-        print(f"📖 Authoring the Complete Technical Manual for: {repo_name}")
+        print(f"📚 Publishing Authoritative Manual: {repo_name}")
         
         with self.driver.session() as session:
-            # Query to get every file, its components, and who it talks to (graphs)
             query = """
-            MATCH (m:Module {repo: $repo_name})
-            WHERE NOT m.name CONTAINS 'test' AND NOT m.name CONTAINS '__init__'
-            
-            OPTIONAL MATCH (m)-[:DEFINES]->(item)
-            WITH m, item, labels(item)[0] AS type
-            WITH m, collect({name: item.name, type: type, desc: item.description}) AS components
-            
-            OPTIONAL MATCH (m)<-[:DEPENDS_ON]-(other)
-            WITH m, components, count(distinct other) as inbound
-            OPTIONAL MATCH (m)-[:DEPENDS_ON]->(target)
-            WITH m, components, inbound, collect(distinct target.name) as outbound_names
-            
-            RETURN m.name AS file, components, inbound, outbound_names,
-                   CASE 
-                     WHEN m.name CONTAINS '/' THEN split(m.name, '/')[0] 
-                     ELSE 'Core Operations'
-                   END AS folder_group
-            ORDER BY folder_group ASC, inbound DESC
+            MATCH (f:File {repo: $repo_name})
+            WHERE NOT f.name CONTAINS 'node_modules'
+            OPTIONAL MATCH (f)-[:DEFINES]->(item)
+            WITH f, collect({name: item.name, type: labels(item)[0], desc: item.description}) AS items
+            OPTIONAL MATCH (f)-[:DEPENDS_ON]->(dep)
+            RETURN f.name AS file, f.extension AS ext, items, collect(dep.name) AS deps
+            ORDER BY size(deps) DESC, file ASC
             """
             results = session.run(query, repo_name=repo_name).data()
 
         if not results:
-            print("❌ No data found. Ensure you have ingested the repo first.")
+            print("❌ No data found.")
             return
 
-        filename = f"{repo_name.upper()}_TECHNICAL_MANUAL.md"
+        # DYNAMIC ENTRY POINT DETECTION
+        all_files = [r['file'] for r in results]
+        identity_prompt = f"Analyze this file list: {all_files[:20]}. Identify the primary ENTRY file and the primary CORE logic file. Format: ENTRY:filename, CORE:filename"
+        identity = self.ask_ai(identity_prompt)
         
-        with open(filename, "w", encoding="utf-8") as f:
-            # --- 1. THE FRONT MATTER ---
-            f.write(f"# 📘 {repo_name.upper()}: Technical Architecture & Logic Reference\n")
-            f.write("## An exhaustive guide to every file, connection, and code block.\n\n")
-            f.write("---\n")
+        try:
+            entry_file = identity.split("ENTRY:")[1].split(",")[0].strip()
+            core_file = identity.split("CORE:")[1].strip()
+        except:
+            entry_file = results[0]['file']
+            core_file = results[1]['file'] if len(results) > 1 else entry_file
 
-            # --- 2. THE CHAPTERS (FILES) ---
-            for res in results:
-                f.write(f"## 📄 File: `{res['file']}`\n")
+        full_path = os.path.join(self.output_dir, f"{repo_name.upper()}_TECHNICAL_MANUAL.md")
+        
+        with open(full_path, "w", encoding="utf-8") as book:
+            # CHAPTER 1: DESIGN PHILOSOPHY
+            book.write(f"# 📖 {repo_name.upper()} | Engineering Specification\n\n")
+            book.write("## 01. Architectural Design\n")
+            summary_prompt = f"Explain the purpose and architectural pattern of a project containing these files: {all_files[:12]}. Start directly with the definition."
+            book.write(f"{self.ask_ai(summary_prompt, 'manual')}\n\n")
+
+            # CHAPTER 2: EXECUTION FLOW
+            book.write("## 02. System Workflow\n")
+            book.write("The following diagram outlines the high-level call sequence and module dependencies.\n\n")
+            book.write("```mermaid\nsequenceDiagram\n  autonumber\n")
+            book.write(f"  Note over {entry_file.replace('.','_')}, {core_file.replace('.','_')}: Critical Path\n")
+            
+            for res in results[:12]:
+                fid = res['file'].replace('.','_').replace('/','_')
+                for d in res['deps']:
+                    did = d.replace('.','_').replace('/','_')
+                    book.write(f"  {fid}->>{did}: invokes\n")
+            book.write("```\n\n---\n")
+
+            # CHAPTER 3: MODULE SPECIFICATIONS
+            book.write("## 03. Module Deep-Dive\n")
+            for i, res in enumerate(results, 1):
+                book.write(f"### 3.{i} `{res['file']}`\n")
                 
-                # --- 3. THE GRAPH SECTION ---
-                # We use Mermaid.js to render the graph inside the Markdown book
-                f.write("### 📉 Dependency Graph\n")
-                f.write("```mermaid\ngraph LR\n")
-                this_file = res['file'].split('/')[-1].replace('.py','')
-                if res['outbound_names']:
-                    for target in res['outbound_names']:
-                        target_file = target.split('/')[-1].replace('.py','')
-                        f.write(f"    {this_file} --> {target_file}\n")
+                # Logic Analysis - No guessing allowed
+                if res['ext'] in ['py', 'js', 'java', 'ts', 'cpp']:
+                    logic_prompt = f"Define the execution logic for the module `{res['file']}`. It contains these symbols: {res['items']}. Focus on how it processes data."
                 else:
-                    f.write(f"    {this_file}\n")
-                f.write("```\n")
-                f.write(f"*This module is a dependency for **{res['inbound']}** other parts of the system.*\n\n")
-
-                # --- 4. THE CODE EXPLANATIONS ---
-                f.write("### 🛠️ Code Logic Breakdown\n")
+                    logic_prompt = f"Define the role of `{res['file']}` within the project infrastructure."
                 
-                for c in res['components']:
-                    label = "Class" if str(c['type']).lower() == 'class' else "Function"
-                    f.write(f"#### 🔹 {label}: `{c['name']}`\n")
-                    
-                    # AI Narrator explains the code
-                    explanation = self.get_ai_narrative(c['name'], c['desc'], label)
-                    f.write(f"{explanation}\n\n")
-                
-                f.write("---\n")
-                f.write('<div style="page-break-after: always;"></div>\n\n')
+                book.write(f"{self.ask_ai(logic_prompt, 'architect')}\n\n")
 
-        print(f"✅ Manual authored: {filename}")
+                # Table with Dynamic Fallback (Live Terminal-style Querying)
+                if res['items'] and any(item['name'] for item in res['items']):
+                    book.write("| Component | Type | Responsibility |\n| :--- | :--- | :--- |\n")
+                    for item in res['items']:
+                        if not item['name']: continue
+                        
+                        desc = item['desc']
+                        # If description is missing ("No description thing"), query the AI just like the terminal!
+                        if not desc or desc == "None" or "No description" in desc:
+                            desc = self.ask_ai(f"Define the specific responsibility of the {item['type']} `{item['name']}` in the {repo_name} system.")
+                        
+                        book.write(f"| `{item['name']}` | {item['type']} | {desc} |\n")
+                book.write("\n---\n")
+
+        print(f"✅ Authoritative Book Generated: {full_path}")
 
 if __name__ == "__main__":
     engine = RepoManualEngine()
