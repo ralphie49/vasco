@@ -20,6 +20,8 @@
             --icon-color: #64748b;
             --code-bg: #f1f5f9;    
             --code-text: #000000;  
+            --input-bg: #f8fafc;
+            --input-text: #0f172a;
         }
 
         .dark-mode {
@@ -33,11 +35,13 @@
             --icon-color: #94a3b8;
             --code-bg: #020617;    
             --code-text: #e2e8f0;  
+            --input-bg: #1e293b;
+            --input-text: #f8fafc;
         }
 
         body { 
             font-family: 'Inter', sans-serif; 
-            min-height: 100vh; /* Changed from 150vh to remove forced gap */
+            min-height: 100vh;
             margin: 0;
             display: flex; 
             flex-direction: column; 
@@ -53,12 +57,22 @@
             padding: 20px; 
             gap: 20px; 
             align-items: flex-start;
-            min-height: calc(100vh - 80px); /* Ensures content area fills screen */
+            min-height: calc(100vh - 80px); 
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
+
+        /* DYNAMIC LAYOUT ENGINE */
+        .layout-balanced #doc-panel { width: 55%; }
+        .layout-balanced #map-panel { width: 45%; }
+        .layout-focus-doc #doc-panel { width: 75%; }
+        .layout-focus-doc #map-panel { width: 25%; cursor: pointer; }
+        .layout-focus-graph #doc-panel { width: 25%; cursor: pointer; }
+        .layout-focus-graph #map-panel { width: 75%; }
+        
+        .is-mini-hover:hover { transform: scale(1.01); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
 
         /* DOCUMENT PANEL */
         #doc-panel { 
-            width: 55%; 
             height: 90vh; 
             position: sticky;
             top: 20px;
@@ -68,15 +82,13 @@
             border-radius: 12px;
             border: 1px solid var(--border-color);
             overflow: hidden;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         #doc-panel.fullscreen-doc {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
             z-index: 2000;
             border-radius: 0;
         }
@@ -102,43 +114,24 @@
             flex-shrink: 0; 
             color: var(--text-color) !important;
             margin-top: 20px; 
-            margin-bottom: 40px; /* Reduced from 100px to remove bottom gap */
-            transition: background 0.3s ease, color 0.3s ease;
+            margin-bottom: 40px; 
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease;
         }
 
-        #doc-container * { color: inherit !important; }
+        #doc-container, #doc-container * { color: var(--text-color) !important; }
         
-        .dark-mode #doc-container h1, 
-        .dark-mode #doc-container h2, 
-        .dark-mode #doc-container h3, 
-        .dark-mode #doc-container strong,
-        .dark-mode #doc-container b,
-        .dark-mode #doc-container li,
-        .dark-mode #doc-container p {
-            color: var(--text-color) !important;
-        }
-
         #doc-container pre { 
             background-color: var(--code-bg) !important; 
-            padding: 24px; 
-            border-radius: 8px; 
-            border: 1px solid var(--border-color); 
-            margin: 24px 0; 
-            overflow-x: auto;
+            padding: 24px; border-radius: 8px; border: 1px solid var(--border-color); margin: 24px 0; overflow-x: auto;
         }
         
         #doc-container pre code { 
-            color: var(--code-text) !important; 
-            background: transparent !important; 
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 0.95rem;
-            line-height: 1.5;
-            white-space: pre-wrap; 
+            color: var(--code-text) !important; background: transparent !important; 
+            font-family: 'Courier New', monospace; font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; 
         }
 
         /* GRAPH PANEL */
         #map-panel { 
-            width: 45%; 
             height: 90vh; 
             position: sticky;
             top: 20px;
@@ -148,58 +141,59 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            transition: all 0.3s ease;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         #map-panel.fullscreen-graph {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
             z-index: 2000;
             border-radius: 0;
         }
 
-        #cy-container { position: relative; flex-grow: 1; }
-        #cy { width: 100%; height: 100%; outline: none; }
+        #cy-container { position: relative; flex-grow: 1; min-height: 0; }
+        #cy { position: absolute; top: 0; left: 0; width: 100%; height: 100%; outline: none; background: #fcfcfc; }
+        .dark-mode #cy { background: #0b0f1a; }
+
+        #cy-tooltip {
+            position: fixed;
+            display: none;
+            background: rgba(15, 23, 42, 0.9);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            pointer-events: none;
+            z-index: 3000;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        #node-search {
+            background-color: var(--input-bg);
+            color: var(--input-text);
+            transition: all 0.2s ease;
+        }
 
         .graph-title {
-            position: absolute;
-            top: 15px;
-            left: 24px;
-            z-index: 10;
-            font-size: 10px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.15em;
-            color: var(--icon-color);
-            pointer-events: none;
+            position: absolute; top: 15px; left: 24px; z-index: 10; font-size: 10px; font-weight: 800;
+            text-transform: uppercase; letter-spacing: 0.15em; color: var(--icon-color); pointer-events: none;
         }
 
-        .graph-controls {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            display: grid;
-            grid-template-areas: ". up ." "left . right" ". down .";
-            gap: 5px;
-            z-index: 10;
+        .graph-controls-container {
+            position: absolute; bottom: 20px; right: 20px; z-index: 100; display: flex; flex-direction: column; gap: 10px; align-items: flex-end;
         }
+
+        .d-pad { display: grid; grid-template-areas: ". up ." "left reset right" ". down ."; gap: 5px; }
 
         .graph-btn {
-            width: 35px;
-            height: 35px;
-            background: white;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            color: #64748b;
+            width: 38px; height: 38px; background: white; border: 1px solid var(--border-color);
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            font-size: 14px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); color: #64748b;
         }
         .graph-btn:hover { background: #f8fafc; color: #3b82f6; }
         .dark-mode .graph-btn { background: #1e293b; color: #94a3b8; border-color: #334155; }
@@ -209,67 +203,109 @@
         .formal-blue-btn { background-color: #cbd5e1; color: #1e293b; font-weight: 800; }
 
         @media print {
-            body, html { height: auto !important; overflow: visible !important; }
-            nav, #map-panel, .panel-header, .graph-controls, .graph-title { display: none !important; }
-            .main-content { display: block !important; padding: 0 !important; }
-            #doc-panel { position: static !important; width: 100% !important; height: auto !important; border: none !important; overflow: visible !important; }
+            body, html { 
+                background: white !important;
+                height: auto !important; 
+                overflow: visible !important; 
+            }
+            nav, #map-panel, .panel-header, .graph-controls-container, .graph-title { display: none !important; }
+            #doc-panel { 
+                position: static !important; 
+                width: 100% !important; 
+                height: auto !important; 
+                border: none !important; 
+                background: transparent !important;
+            }
             #doc-viewport { overflow: visible !important; display: block !important; }
-            #doc-page { transform: none !important; box-shadow: none !important; margin: 0 !important; width: 100% !important; padding: 0 !important; }
+            #doc-page { 
+                transform: none !important; 
+                box-shadow: none !important; 
+                margin: 0 !important; 
+                width: 100% !important; 
+                padding: 0 !important;
+                -webkit-print-color-adjust: exact; 
+                print-color-adjust: exact;
+            }
+            pre { 
+                white-space: pre-wrap !important; 
+                word-wrap: break-word !important;
+                -webkit-print-color-adjust: exact;
+            }
         }
     </style>
 </head>
-<body id="main-body">
+<body id="main-body" class="layout-balanced">
+
+    <div id="cy-tooltip"></div>
 
     <nav class="p-4 bg-[#334155] dark:bg-black flex justify-between items-center shadow-xl">
-        <div class="flex items-center"><span class="text-white font-extrabold tracking-[0.5em] text-xl ml-6">RETRY</span></div>
-        <div class="flex items-center rounded-xl overflow-hidden shadow-2xl bg-white">
-            <input id="repo-url" type="text" placeholder="PASTE REPOSITORY LINK" class="px-6 py-3 text-sm w-[400px] outline-none border-none text-slate-700">
-            <button onclick="ingestRepo()" id="btn-ingest" class="formal-blue-btn px-10 py-3 text-xs uppercase tracking-widest border-l border-slate-200">Analyze</button>
+        <div class="flex items-center">
+            <span class="text-white font-extrabold tracking-[0.5em] text-xl ml-6">RETRY</span>
+            <button onclick="cycleLayout()" class="ml-8 text-[9px] text-white/50 border border-white/20 px-3 py-1 rounded-full hover:bg-white/10 transition uppercase tracking-widest">Layout Cycle</button>
         </div>
-        <button onclick="toggleDarkMode()" class="text-2xl mr-6">🌓</button>
+        
+        <div class="flex-1 flex justify-center">
+            <div class="flex items-center rounded-xl overflow-hidden shadow-2xl bg-white mx-4">
+                <input id="repo-url" type="text" placeholder="PASTE REPOSITORY LINK" class="px-6 py-3 text-sm w-[400px] outline-none border-none text-slate-700">
+                <button onclick="ingestRepo()" id="btn-ingest" class="formal-blue-btn px-10 py-3 text-xs uppercase tracking-widest border-l border-slate-200">Analyze</button>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <button onclick="toggleDarkMode()" class="text-2xl mr-6">🌓</button>
+        </div>
     </nav>
 
     <div class="main-content">
-        <div id="doc-panel" class="panel">
+        <div id="doc-panel" class="panel" onclick="handleMiniClick('doc')">
             <div class="panel-header">
                 <div class="flex items-center gap-4">
                     <input type="range" min="0.4" max="1.5" step="0.05" value="0.80" id="zoomRange" oninput="updateZoom(this.value)">
                     <span id="zoomVal" class="text-[10px] font-bold text-slate-500">80%</span>
                 </div>
                 <div class="flex gap-3">
-                    <button onclick="window.print()" class="nav-icon" title="Download PDF">📥</button>
-                    <button onclick="toggleFocusMode()" class="nav-icon" title="Expand Document">⛶</button>
+                    <button onclick="saveDocAs()" class="nav-icon" title="Save Document As">📥</button>
+                    <button onclick="window.print()" class="nav-icon" title="Print Document">🖨️</button>
+                    <button onclick="toggleFocusMode()" class="nav-icon">⛶</button>
                 </div>
             </div>
             <div id="doc-viewport">
                 <div id="doc-page">
                     <div id="doc-container" class="prose max-w-none">
-                        <div id="placeholder-text">
-                            <h1 class="text-center">Repository Documentary</h1>
-                            <p class="text-center italic mt-10 opacity-70">Awaiting analysis...</p>
-                        </div>
+                        <h1 class="text-center">Repository Documentary</h1>
+                        <p class="text-center italic mt-10 opacity-70">Awaiting analysis...</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="map-panel" class="panel">
+        <div id="map-panel" class="panel" onclick="handleMiniClick('map')">
             <div class="panel-header">
-                <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Visualization</span>
-                <button onclick="toggleGraphFullscreen()" class="nav-icon" title="Expand Graph">⛶</button>
+                <div class="flex items-center gap-3">
+                    <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 select-none cursor-default">Visualization</span>
+                    <input id="node-search" type="text" placeholder="SEARCH GRAPH..." class="px-3 py-1 rounded text-[10px] outline-none border border-slate-200 dark:border-slate-700 w-32 focus:w-40 transition-all" onkeyup="searchNodes(this.value)">
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="saveGraphAs()" class="nav-icon" title="Save Graph As">📸</button>
+                    <button onclick="toggleGraphFullscreen()" class="nav-icon">⛶</button>
+                </div>
             </div>
             <div id="cy-container">
                 <div class="graph-title">Dependency Graph</div>
                 <div id="cy"></div>
-                <div class="graph-controls">
-                    <button class="graph-btn" style="grid-area: up" onclick="panGraph(0, 50)">▲</button>
-                    <button class="graph-btn" style="grid-area: left" onclick="panGraph(50, 0)">◀</button>
-                    <button class="graph-btn" style="grid-area: right" onclick="panGraph(-50, 0)">▶</button>
-                    <button class="graph-btn" style="grid-area: down" onclick="panGraph(0, -50)">▼</button>
-                </div>
-                <div style="position: absolute; top: 20px; right: 20px; display: flex; flex-direction: column; gap: 5px; z-index: 10;">
-                    <button class="graph-btn" onclick="zoomGraph(1.2)">+</button>
-                    <button class="graph-btn" onclick="zoomGraph(0.8)">-</button>
+                
+                <div class="graph-controls-container">
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                        <button class="graph-btn" onclick="zoomGraph(1.2)">+</button>
+                        <button class="graph-btn" onclick="zoomGraph(0.8)">-</button>
+                    </div>
+                    <div class="d-pad">
+                        <button class="graph-btn" style="grid-area: up" onclick="panGraph(0, 50)">▲</button>
+                        <button class="graph-btn" style="grid-area: left" onclick="panGraph(50, 0)">◀</button>
+                        <button class="graph-btn" style="grid-area: reset" title="Reset View" onclick="resetGraph()">⟲</button>
+                        <button class="graph-btn" style="grid-area: right" onclick="panGraph(-50, 0)">▶</button>
+                        <button class="graph-btn" style="grid-area: down" onclick="panGraph(0, -50)">▼</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -278,22 +314,127 @@
     <script>
         let cy = null;
         let isDarkMode = false;
+        let layoutState = 0; 
+        let currentRepoName = "repository";
 
-        function toggleFocusMode() {
-            const docPanel = document.getElementById('doc-panel');
-            docPanel.classList.toggle('fullscreen-doc');
-            if (cy) setTimeout(() => { cy.resize(); }, 400);
+        function cycleLayout() {
+            const docFS = document.getElementById('doc-panel').classList.contains('fullscreen-doc');
+            const graphFS = document.getElementById('map-panel').classList.contains('fullscreen-graph');
+
+            if (docFS || graphFS) {
+                document.getElementById('doc-panel').classList.remove('fullscreen-doc');
+                document.getElementById('map-panel').classList.remove('fullscreen-graph');
+                layoutState = 0;
+            } else {
+                layoutState = (layoutState + 1) % 3;
+            }
+            updateLayoutClasses();
         }
 
-        function toggleGraphFullscreen() {
-            const mapPanel = document.getElementById('map-panel');
-            mapPanel.classList.toggle('fullscreen-graph');
+        function handleMiniClick(type) {
+            if (type === 'doc' && layoutState === 2) { layoutState = 1; updateLayoutClasses(); }
+            if (type === 'map' && layoutState === 1) { layoutState = 2; updateLayoutClasses(); }
+        }
+
+        function updateLayoutClasses() {
+            const body = document.getElementById('main-body');
+            const doc = document.getElementById('doc-panel');
+            const map = document.getElementById('map-panel');
+            const slider = document.getElementById('zoomRange');
+
+            body.classList.remove('layout-balanced', 'layout-focus-doc', 'layout-focus-graph');
+            doc.classList.remove('is-mini-hover');
+            map.classList.remove('is-mini-hover');
+
+            if (layoutState === 0) {
+                body.classList.add('layout-balanced');
+                updateZoom(0.8); slider.value = 0.8;
+            } else if (layoutState === 1) {
+                body.classList.add('layout-focus-doc');
+                map.classList.add('is-mini-hover');
+                updateZoom(1.0); slider.value = 1.0;
+            } else if (layoutState === 2) {
+                body.classList.add('layout-focus-graph');
+                doc.classList.add('is-mini-hover');
+                updateZoom(0.35); slider.value = 0.35; 
+            }
+            
             if (cy) {
                 setTimeout(() => {
                     cy.resize();
-                    cy.fit();
-                }, 350);
+                    cy.animate({ fit: { padding: 30 }, duration: 400 });
+                }, 500);
             }
+        }
+
+        async function saveGraphAs() {
+            if (!cy) return;
+            const fileName = `${currentRepoName}-graph.png`;
+            const pngContent = cy.png({ full: true, bg: isDarkMode ? '#0b0f1a' : '#ffffff', scale: 2 });
+            
+            if (window.showSaveFilePicker) {
+                try {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName: fileName,
+                        types: [{ description: 'PNG Image', accept: {'image/png': ['.png']} }],
+                    });
+                    const writable = await handle.createWritable();
+                    const response = await fetch(pngContent);
+                    const blob = await response.blob();
+                    await writable.write(blob);
+                    await writable.close();
+                } catch (err) { console.error("Save cancelled or failed", err); }
+            } else {
+                const userFileName = prompt("Enter file name:", fileName);
+                if (!userFileName) return;
+                const link = document.createElement('a');
+                link.href = pngContent;
+                link.download = userFileName.endsWith('.png') ? userFileName : userFileName + '.png';
+                link.click();
+            }
+        }
+
+        async function saveDocAs() {
+            const docContent = document.getElementById('doc-container').innerText;
+            const defaultName = `${currentRepoName}-documentation.txt`;
+            
+            if (window.showSaveFilePicker) {
+                try {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName: defaultName,
+                        types: [{ description: 'Text File', accept: {'text/plain': ['.txt']} }],
+                    });
+                    const writable = await handle.createWritable();
+                    await writable.write(docContent);
+                    await writable.close();
+                } catch (err) { console.error("Save cancelled or failed", err); }
+            } else {
+                const userFileName = prompt("Enter file name:", defaultName);
+                if (!userFileName) return;
+                const blob = new Blob([docContent], { type: "text/plain" });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = userFileName.endsWith('.txt') ? userFileName : userFileName + '.txt';
+                link.click();
+            }
+        }
+
+        function searchNodes(query) {
+            if (!cy) return;
+            cy.nodes().style('opacity', 1);
+            if (!query) return;
+            const matches = cy.nodes().filter(n => n.data('label').toLowerCase().includes(query.toLowerCase()));
+            cy.nodes().difference(matches).style('opacity', 0.1);
+        }
+
+        function toggleFocusMode() {
+            document.getElementById('doc-panel').classList.toggle('fullscreen-doc');
+            if (cy) setTimeout(() => cy.resize(), 500);
+        }
+
+        function toggleGraphFullscreen() {
+            document.getElementById('map-panel').classList.toggle('fullscreen-graph');
+            if (cy) setTimeout(() => { cy.resize(); cy.fit(); }, 500);
         }
 
         function toggleDarkMode() {
@@ -301,115 +442,83 @@
             document.body.classList.toggle('dark-mode');
             if (cy) {
                 cy.style()
-                    .selector('node').style('color', isDarkMode ? '#f8fafc' : '#1e293b')
+                    .selector('node').style('color', isDarkMode ? '#f8fafc' : '#333')
                     .selector('edge').style('line-color', isDarkMode ? '#475569' : '#cbd5e1').update();
             }
         }
 
-        function zoomGraph(factor) { 
-            if (cy) {
-                const currentZoom = cy.zoom();
-                cy.zoom({
-                    level: currentZoom * factor,
-                    renderedPosition: { x: cy.width() / 2, y: cy.height() / 2 }
-                });
-            } 
-        }
-
+        function zoomGraph(factor) { if (cy) cy.zoom(cy.zoom() * factor); }
         function panGraph(x, y) { if (cy) cy.panBy({ x: x, y: y }); }
+        function resetGraph() { if (cy) { cy.fit(); cy.center(); } }
 
         function updateZoom(val) {
             const page = document.getElementById('doc-page');
             page.style.transform = `scale(${val})`;
             document.getElementById('zoomVal').innerText = Math.round(val * 100) + '%';
-            page.style.marginTop = (val > 1) ? `${(val - 1) * 200 + 20}px` : '20px';
         }
 
         async function ingestRepo() {
-            const url = document.getElementById('repo-url').value;
-            if (!url) return;
             const btn = document.getElementById('btn-ingest');
+            const urlInput = document.getElementById('repo-url').value;
+            if(!urlInput) return;
+            
+            try { currentRepoName = urlInput.split('/').filter(Boolean).pop().replace('.git', ''); } catch(e) { currentRepoName = "repository"; }
+            
             btn.innerText = "RUNNING";
             try {
-                const res = await fetch('http://127.0.0.1:8000/ingest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: url }) });
+                const res = await fetch('http://127.0.0.1:8000/ingest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: urlInput }) });
                 const data = await res.json();
                 const genRes = await fetch(`http://127.0.0.1:8000/generate/${data.repo}`);
                 const genData = await genRes.json();
-                document.getElementById('doc-container').innerHTML = `<div>${marked.parse(genData.markdown)}</div>`;
+                document.getElementById('doc-container').innerHTML = marked.parse(genData.markdown);
                 loadGraph();
             } catch (e) { alert("Server Error"); }
             finally { btn.innerText = "Analyze"; }
         }
 
         async function loadGraph() {
-            const res = await fetch('http://127.0.0.1:8000/graph-data');
-            const elements = await res.json();
-            cy = cytoscape({
-                container: document.getElementById('cy'),
-                elements: elements,
-                pixelRatio: 'auto', // High-quality rendering
-                hideEdgesOnViewport: false,
-                textureOnViewport: false,
-                style: [
-                    { 
-                        selector: 'node', 
-                        style: { 
-                            'label': 'data(label)', 
-                            'color': isDarkMode ? '#f8fafc' : '#1e293b', 
-                            'font-size': '11px', 
-                            'font-weight': '600',
-                            'width': 22, 
-                            'height': 22,
-                            'background-color': (n) => n.data('label').includes('.') ? '#f59e0b' : '#3b82f6',
-                            'text-valign': 'bottom', 
-                            'text-margin-y': '8px',
-                            'text-background-opacity': 0,
-                            'text-background-color': '#ffffff',
-                            'text-background-padding': '2px',
-                            'border-width': 2,
-                            'border-color': isDarkMode ? '#334155' : '#ffffff',
-                            'overlay-padding': '4px',
-                            'transition-property': 'background-color, line-color, target-arrow-color',
-                            'transition-duration': '0.3s'
-                        }
-                    },
-                    { 
-                        selector: 'edge', 
-                        style: { 
-                            'width': 1.5, 
-                            'line-color': isDarkMode ? '#475569' : '#cbd5e1', 
-                            'target-arrow-shape': 'triangle', 
-                            'target-arrow-color': isDarkMode ? '#475569' : '#cbd5e1',
-                            'curve-style': 'bezier',
-                            'arrow-scale': 1,
-                            'opacity': 0.8
-                        }
-                    },
-                    {
-                        selector: 'node:selected',
-                        style: {
-                            'border-width': 4,
-                            'border-color': '#3b82f6'
-                        }
-                    }
-                ],
-                layout: { 
-                    name: 'cose', 
-                    padding: 50, 
-                    nodeOverlap: 20, 
-                    componentSpacing: 100,
-                    animate: true,
-                    animationDuration: 500
-                }
-            });
-            
-            // Interaction to mimic Neo4j hover/click
-            cy.on('mouseover', 'node', (e) => {
-                e.target.style({'width': 28, 'height': 28});
-            });
-            cy.on('mouseout', 'node', (e) => {
-                e.target.style({'width': 22, 'height': 22});
-            });
+            try {
+                const res = await fetch('http://127.0.0.1:8000/graph-data');
+                const elements = await res.json();
+                const tooltip = document.getElementById('cy-tooltip');
+
+                cy = cytoscape({
+                    container: document.getElementById('cy'),
+                    elements: elements,
+                    wheelSensitivity: 0.15,
+                    style: [
+                        { 
+                            selector: 'node', 
+                            style: { 
+                                'label': (ele) => ele.data('label').length > 10 ? ele.data('label').substring(0, 8) + '...' : ele.data('label'),
+                                'color': isDarkMode ? '#f8fafc' : '#333', 'font-size': '10px', 'font-weight': '600',
+                                'width': 50, 'height': 50, 'background-color': (n) => n.data('label').includes('.') ? '#F79767' : '#67B7DC',
+                                'text-valign': 'center', 'text-halign': 'center',
+                                'border-width': 3, 'border-color': (n) => n.data('label').includes('.') ? '#f27e44' : '#4ba4d1'
+                            }
+                        },
+                        { selector: 'edge', style: { 'width': 2, 'line-color': isDarkMode ? '#475569' : '#cbd5e1', 'target-arrow-shape': 'triangle', 'curve-style': 'bezier' } }
+                    ],
+                    layout: { name: 'cose', padding: 40 }
+                });
+
+                cy.on('mouseover', 'node', (e) => {
+                    const node = e.target;
+                    node.style({'width': 60, 'height': 60});
+                    tooltip.innerText = node.data('label');
+                    tooltip.style.display = 'block';
+                });
+
+                cy.on('mousemove', 'node', (e) => {
+                    tooltip.style.top = (e.renderedPosition.y + document.getElementById('cy').getBoundingClientRect().top - 40) + 'px';
+                    tooltip.style.left = (e.renderedPosition.x + document.getElementById('cy').getBoundingClientRect().left + 10) + 'px';
+                });
+
+                cy.on('mouseout', 'node', (e) => {
+                    e.target.style({'width': 50, 'height': 50});
+                    tooltip.style.display = 'none';
+                });
+            } catch(e) { console.error("Graph failed to load", e); }
         }
 
         window.onload = () => updateZoom(0.80);
