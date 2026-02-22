@@ -45,43 +45,45 @@
 
 **Topology and Orchestration for Requests**
 
-The requests library is a complex system with multiple interconnected components. To ensure structural integrity and maintainability, it is crucial to understand the topology and orchestration of these components. This chapter provides a high-level overview of the system's architecture and the relationships between its constituent parts.
+The architectural blueprint for the requests library is a complex network of interconnected components. To ensure the structural integrity of the system, it is essential to understand the topology and orchestration of these components.
 
-**Component Topology**
+**Component Analysis**
 
-The requests library consists of four primary components:
+The system consists of four primary components:
 
-1.  **Adapters (src/requests/adapters.py)**: This component provides a low-level interface for sending HTTP requests using various adapters (e.g., HTTPAdapter). It has 14 outgoing dependencies and 12 incoming dependencies, indicating its role as a foundational component.
-2.  **Models (src/requests/models.py)**: This component defines the data structures and interfaces for requests and responses (e.g., Request, PreparedRequest, Response). It has 18 outgoing dependencies and 13 incoming dependencies, highlighting its central role in the system.
-3.  **Sessions (src/requests/sessions.py)**: This component manages the session state and provides a high-level interface for sending requests (e.g., Session, session). It has 19 outgoing dependencies and 14 incoming dependencies, indicating its importance in orchestrating the request lifecycle.
-4.  **Initialization (src/requests/__init__.py)**: This component serves as the entry point for the library, providing version checking and compatibility verification. It has 7 outgoing dependencies and 10 incoming dependencies, reflecting its role as a gateway to the system.
+1. **Adapters** (`src/requests/adapters.py`): This component provides the interface between the requests library and the underlying network infrastructure. It defines the `_urllib3_request_context`, `BaseAdapter`, and `HTTPAdapter` symbols.
+2. **Hooks** (`src/requests/hooks.py`): This component provides a mechanism for dispatching hooks during the request lifecycle. It defines the `default_hooks` and `dispatch_hook` symbols.
+3. **Models** (`src/requests/models.py`): This component defines the data structures and interfaces for requests and responses. It defines the `RequestEncodingMixin`, `RequestHooksMixin`, `Request`, `PreparedRequest`, and `Response` symbols.
+4. **Sessions** (`src/requests/sessions.py`): This component provides a mechanism for managing sessions and sending requests. It defines the `merge_setting`, `merge_hooks`, `SessionRedirectMixin`, `Session`, and `session` symbols.
+
+**Dependency Analysis**
+
+The components have the following dependencies:
+
+* Adapters: 14 outgoing dependencies, 12 incoming dependencies
+* Hooks: 0 outgoing dependencies, 12 incoming dependencies
+* Models: 18 outgoing dependencies, 13 incoming dependencies
+* Sessions: 19 outgoing dependencies, 14 incoming dependencies
 
 **Orchestration**
 
-The components interact with each other through a complex network of dependencies. The following key relationships govern the orchestration of requests:
+The orchestration of the components is as follows:
 
-*   **Adapters → Models**: Adapters rely on models to define the structure and behavior of requests and responses.
-*   **Models → Sessions**: Sessions use models to manage the request lifecycle and maintain session state.
-*   **Sessions → Adapters**: Sessions delegate the actual sending of requests to adapters, which handle the low-level details.
-*   **Initialization → Sessions**: The initialization component sets up the session object, which serves as the primary interface for users.
-
-**Design Patterns**
-
-The requests library employs several design patterns to ensure maintainability and scalability:
-
-*   **Dependency Injection**: Components rely on dependencies being injected rather than creating them internally, promoting loose coupling and testability.
-*   **Factory Pattern**: The Session class acts as a factory, creating and managing the request lifecycle.
-*   **Adapter Pattern**: Adapters provide a standardized interface for sending requests, allowing for different implementations (e.g., HTTPAdapter).
+1. The `__init__.py` component initializes the system and checks for compatibility.
+2. The `sessions.py` component creates a session object, which is used to send requests.
+3. The `models.py` component defines the request and response data structures.
+4. The `adapters.py` component provides the interface to the underlying network infrastructure.
+5. The `hooks.py` component dispatches hooks during the request lifecycle.
 
 **Structural Integrity**
 
-To maintain structural integrity, it is essential to respect the component topology and orchestration. When modifying or extending the system, consider the following guidelines:
+To ensure the structural integrity of the system, the following design patterns and principles are employed:
 
-*   **Minimize cyclic dependencies**: Avoid introducing cycles in the dependency graph to prevent tight coupling and ensure testability.
-*   **Preserve interface stability**: Changes to interfaces should be backward compatible to avoid disrupting the ecosystem.
-*   **Maintain clear component responsibilities**: Ensure each component has a well-defined role and avoids overlapping responsibilities.
+* **Separation of Concerns**: Each component has a well-defined responsibility and interface.
+* **Dependency Injection**: Components are loosely coupled, with dependencies injected through the constructor or setter methods.
+* **Interface Segregation**: Interfaces are designed to be client-specific, reducing the impact of changes to the system.
 
-By understanding the architectural blueprint of the requests library, developers can make informed decisions when modifying or extending the system, ensuring the structural integrity and maintainability of the codebase.
+By employing these design patterns and principles, the requests library ensures a robust and maintainable architecture.
 
 
 <div class="page-break"></div>
@@ -92,246 +94,253 @@ By understanding the architectural blueprint of the requests library, developers
 
 ### 2.1 Overview
 
-This chapter describes the technical specifications for authentication and authorization in the requests library.
+This chapter provides a detailed technical breakdown of the authentication and authorization mechanisms used in the requests library. The following sections outline the various authentication schemes, their implementation details, and usage examples.
 
 ### 2.2 Authentication Schemes
 
-The requests library supports several authentication schemes:
+The requests library supports several authentication schemes, including:
 
-*   **HTTP Basic Auth**: a simple authentication scheme that sends the username and password in plain text with each request.
-*   **HTTP Digest Auth**: a more secure authentication scheme that uses a challenge-response mechanism to authenticate the client.
-*   **HTTP Proxy Auth**: an authentication scheme that is used to authenticate with a proxy server.
+* **Basic Authentication**: Implemented using the `HTTPBasicAuth` class, which takes a username and password as input.
+* **Digest Authentication**: Implemented using the `HTTPDigestAuth` class, which takes a username and password as input.
+* **Proxy Authentication**: Implemented using the `HTTPProxyAuth` class, which takes a username and password as input.
 
-### 2.3 Authentication Classes
+### 2.3 Implementation Details
 
-The requests library provides several authentication classes that can be used to authenticate with a server:
+The authentication schemes are implemented using the following classes and methods:
 
-*   **`AuthBase`**: a base class for all authentication classes.
-*   **`HTTPBasicAuth`**: a class that implements HTTP Basic Auth.
-*   **`HTTPDigestAuth`**: a class that implements HTTP Digest Auth.
-*   **`HTTPProxyAuth`**: a class that implements HTTP Proxy Auth.
+* `_basic_auth_str`: A function that takes a username and password as input and returns a base64-encoded string.
+* `AuthBase`: A base class for all authentication schemes, which provides a `__call__` method that returns a tuple containing the authentication headers.
+* `HTTPBasicAuth`, `HTTPDigestAuth`, and `HTTPProxyAuth`: Subclasses of `AuthBase` that implement the specific authentication schemes.
 
-### 2.4 Authentication Request Flow
+### 2.4 Usage Examples
 
-The following is a high-level overview of the authentication request flow:
+The following examples demonstrate how to use the authentication schemes:
 
-1.  The client creates an instance of an authentication class (e.g. `HTTPBasicAuth`) and passes in the required credentials (e.g. username and password).
-2.  The client sends a request to the server with the authentication instance attached to the request object.
-3.  The server receives the request and checks if the authentication credentials are valid.
-4.  If the credentials are valid, the server returns a response with a status code indicating success (e.g. 200 OK).
-5.  If the credentials are invalid, the server returns a response with a status code indicating failure (e.g. 401 Unauthorized).
-
-### 2.5 Request Authentication
-
-The requests library provides several ways to authenticate a request:
-
-*   **`auth` parameter**: the `auth` parameter can be passed to the `request` function to specify the authentication instance to use.
-*   **`auth` attribute**: the `auth` attribute can be set on the `Session` object to specify the authentication instance to use for all requests sent through the session.
-
-### 2.6 Authentication Examples
-
-The following are some examples of how to use the authentication classes:
-
-*   **HTTP Basic Auth**:
-
-    ```python
+* **Basic Authentication**:
+```python
+import requests
 from requests.auth import HTTPBasicAuth
 
-auth = HTTPBasicAuth('username', 'password')
+username = 'user'
+password = 'pass'
+
+auth = HTTPBasicAuth(username, password)
 response = requests.get('https://example.com', auth=auth)
 ```
 
-*   **HTTP Digest Auth**:
-
-    ```python
+* **Digest Authentication**:
+```python
+import requests
 from requests.auth import HTTPDigestAuth
 
-auth = HTTPDigestAuth('username', 'password')
+username = 'user'
+password = 'pass'
+
+auth = HTTPDigestAuth(username, password)
 response = requests.get('https://example.com', auth=auth)
 ```
 
-*   **HTTP Proxy Auth**:
-
-    ```python
+* **Proxy Authentication**:
+```python
+import requests
 from requests.auth import HTTPProxyAuth
 
-auth = HTTPProxyAuth('username', 'password')
+username = 'user'
+password = 'pass'
+
+auth = HTTPProxyAuth(username, password)
 proxies = {'http': 'http://proxy.example.com:8080'}
-response = requests.get('https://example.com', proxies=proxies, auth=auth)
+response = requests.get('https://example.com', auth=auth, proxies=proxies)
 ```
 
-### 2.7 Authentication Testing
+### 2.5 Request Authentication Flow
 
-The requests library provides several test cases to ensure that the authentication classes are working correctly:
+The following steps outline the request authentication flow:
 
-*   **`test_requests.py`**: this test file contains several test cases for the authentication classes.
-*   **`test_utils.py`**: this test file contains several test cases for the utility functions used by the authentication classes.
+1. The user creates an instance of the desired authentication scheme (e.g., `HTTPBasicAuth`).
+2. The user passes the authentication instance to the `requests.get` method using the `auth` parameter.
+3. The `requests` library calls the `__call__` method of the authentication instance to obtain the authentication headers.
+4. The authentication headers are added to the request headers.
+5. The request is sent to the server.
 
-### 2.8 Authentication Security Considerations
+### 2.6 Authentication Header Format
 
-The following are some security considerations to keep in mind when using the authentication classes:
+The authentication headers are formatted as follows:
 
-*   **Use secure protocols**: always use secure protocols (e.g. HTTPS) when sending authentication credentials.
-*   **Use secure passwords**: always use secure passwords and keep them confidential.
-*   **Use secure storage**: always store authentication credentials securely (e.g. using a secure keyring).
+* **Basic Authentication**: `Authorization: Basic <base64-encoded-username-password>`
+* **Digest Authentication**: `Authorization: Digest <digest-token>`
+* **Proxy Authentication**: `Proxy-Authorization: <proxy-auth-token>`
+
+### 2.7 Security Considerations
+
+The following security considerations should be taken into account when using the authentication schemes:
+
+* **Password Storage**: Passwords should be stored securely using a secure password storage mechanism.
+* **Password Transmission**: Passwords should be transmitted securely using a secure communication protocol (e.g., HTTPS).
+* **Authentication Header Security**: Authentication headers should be protected from tampering and eavesdropping.
+
+### 2.8 Conclusion
+
+In conclusion, the requests library provides a robust and flexible authentication mechanism that supports various authentication schemes. By understanding the implementation details and usage examples, developers can effectively use the authentication schemes to secure their requests. Additionally, developers should be aware of the security considerations to ensure the secure transmission and storage of sensitive information.
 
 
 <div class="page-break"></div>
 
-## 3. Testing and Validation
+## 3. Testing and Development
 
-**Chapter 3: Testing and Validation**
+**Chapter 3: Testing and Development**
 
-**3.1 Test Framework**
+### 3.1 Test Framework
 
-The test framework used for this project is Python's built-in `unittest` module. The test files are located in the `tests` directory and are named according to the module they test, e.g., `test_requests.py`.
+The test framework consists of multiple test files, each containing a set of test cases for a specific component of the requests library. The test files are:
 
-**3.2 Test Structure**
+* `tests/test_hooks.py`: Tests the hooks functionality of the requests library.
+* `tests/test_lowlevel.py`: Tests the low-level functionality of the requests library, including chunked uploads and downloads.
+* `tests/test_packages.py`: Tests the packages functionality of the requests library.
+* `tests/test_testserver.py`: Tests the test server functionality of the requests library.
+* `tests/testserver/server.py`: Implements the test server used by the test framework.
 
-Each test file contains a series of test classes, each of which contains one or more test methods. The test methods are prefixed with `test_` to indicate that they are test cases.
+### 3.2 Test Dependencies
 
-**3.3 Test Data**
+Each test file has a set of dependencies that are required to run the tests. These dependencies include:
 
-The test data used for this project is stored in the `tests` directory and includes:
+* `docs/_static/requests-sidebar.png`: A static image file used by the test framework.
+* `ext/requests-logo-compressed.png`: A compressed version of the requests logo used by the test framework.
+* `ext/requests-logo.ai`: The requests logo in AI format used by the test framework.
+* `ext/requests-logo.png`: The requests logo in PNG format used by the test framework.
+* `ext/requests-logo.svg`: The requests logo in SVG format used by the test framework.
+* `src/requests/adapters.py`: The adapters module of the requests library.
+* `src/requests/api.py`: The API module of the requests library.
+* `src/requests/auth.py`: The authentication module of the requests library.
+* `src/requests/certs.py`: The certificates module of the requests library.
+* `src/requests/compat.py`: The compatibility module of the requests library.
+* `src/requests/cookies.py`: The cookies module of the requests library.
+* `src/requests/exceptions.py`: The exceptions module of the requests library.
+* `src/requests/help.py`: The help module of the requests library.
+* `src/requests/hooks.py`: The hooks module of the requests library.
+* `src/requests/models.py`: The models module of the requests library.
+* `src/requests/packages.py`: The packages module of the requests library.
+* `src/requests/sessions.py`: The sessions module of the requests library.
+* `src/requests/status_codes.py`: The status codes module of the requests library.
+* `src/requests/structures.py`: The structures module of the requests library.
+* `src/requests/utils.py`: The utilities module of the requests library.
+* `src/requests/_internal_utils.py`: The internal utilities module of the requests library.
+* `src/requests/__init__.py`: The initialization module of the requests library.
+* `src/requests/__version__.py`: The version module of the requests library.
+* `tests/test_requests.py`: The test requests module of the test framework.
+* `tests/test_utils.py`: The test utilities module of the test framework.
+* `tests/utils.py`: The utilities module of the test framework.
 
-* `tests/certs/expired`: a directory containing expired SSL certificates for testing purposes
-* `tests/testserver/server.py`: a simple HTTP server for testing purposes
+### 3.3 Test Cases
 
-**3.4 Test Cases**
-
-The following test cases are included in this project:
+Each test file contains a set of test cases that are designed to test specific functionality of the requests library. The test cases are:
 
 * `tests/test_hooks.py`:
-	+ `test_hooks`: tests the `hooks` module
-	+ `test_default_hooks`: tests the default hooks
+	+ `test_hooks`: Tests the hooks functionality of the requests library.
+	+ `test_default_hooks`: Tests the default hooks functionality of the requests library.
 * `tests/test_lowlevel.py`:
-	+ `echo_response_handler`: tests the `echo_response_handler` function
-	+ `test_chunked_upload`: tests chunked uploads
-	+ `test_chunked_encoding_error`: tests chunked encoding errors
-	+ `test_chunked_upload_uses_only_specified_host_header`: tests that chunked uploads use only the specified host header
-	+ `test_chunked_upload_doesnt_skip_host_header`: tests that chunked uploads don't skip the host header
-	+ `test_conflicting_content_lengths`: tests conflicting content lengths
-	+ `test_digestauth_401_count_reset_on_redirect`: tests that the 401 count is reset on redirect
-	+ `test_digestauth_401_only_sent_once`: tests that the 401 is only sent once
-	+ `test_digestauth_only_on_4xx`: tests that digest auth is only used on 4xx responses
-	+ `test_use_proxy_from_environment`: tests using a proxy from the environment
-	+ `test_redirect_rfc1808_to_non_ascii_location`: tests redirects to non-ASCII locations
-	+ `test_fragment_not_sent_with_request`: tests that fragments are not sent with requests
-	+ `test_fragment_update_on_redirect`: tests that fragments are updated on redirect
-	+ `test_json_decode_compatibility_for_alt_utf_encodings`: tests JSON decode compatibility for alternative UTF encodings
-* `tests/test_requests.py`:
-	+ `TestRequests`: tests the `requests` module
-	+ `TestCaseInsensitiveDict`: tests the `CaseInsensitiveDict` class
-	+ `TestMorselToCookieExpires`: tests the `morsel_to_cookie_expires` function
-	+ `TestMorselToCookieMaxAge`: tests the `morsel_to_cookie_max_age` function
-	+ `TestTimeout`: tests timeouts
-	+ `RedirectSession`: tests redirect sessions
-	+ `test_json_encodes_as_bytes`: tests that JSON encodes as bytes
-	+ `test_requests_are_updated_each_time`: tests that requests are updated each time
-	+ `test_proxy_env_vars_override_default`: tests that proxy environment variables override the default
-	+ `test_data_argument_accepts_tuples`: tests that the `data` argument accepts tuples
-	+ `test_prepared_copy`: tests the `prepared_copy` method
-	+ `test_urllib3_retries`: tests urllib3 retries
-	+ `test_urllib3_pool_connection_closed`: tests urllib3 pool connection closure
-	+ `TestPreparingURLs`: tests preparing URLs
-	+ `test_content_length_for_bytes_data`: tests content length for bytes data
-	+ `test_content_length_for_string_data_counts_bytes`: tests content length for string data counts bytes
-	+ `test_json_decode_errors_are_serializable_deserializable`: tests JSON decode errors are serializable and deserializable
+	+ `echo_response_handler`: Tests the echo response handler functionality of the requests library.
+	+ `test_chunked_upload`: Tests the chunked upload functionality of the requests library.
+	+ `test_chunked_encoding_error`: Tests the chunked encoding error functionality of the requests library.
+	+ `test_chunked_upload_uses_only_specified_host_header`: Tests the chunked upload uses only specified host header functionality of the requests library.
+	+ `test_chunked_upload_doesnt_skip_host_header`: Tests the chunked upload doesn't skip host header functionality of the requests library.
+	+ `test_conflicting_content_lengths`: Tests the conflicting content lengths functionality of the requests library.
+	+ `test_digestauth_401_count_reset_on_redirect`: Tests the digest authentication 401 count reset on redirect functionality of the requests library.
+	+ `test_digestauth_401_only_sent_once`: Tests the digest authentication 401 only sent once functionality of the requests library.
+	+ `test_digestauth_only_on_4xx`: Tests the digest authentication only on 4xx functionality of the requests library.
+	+ `test_use_proxy_from_environment`: Tests the use proxy from environment functionality of the requests library.
+	+ `test_redirect_rfc1808_to_non_ascii_location`: Tests the redirect RFC 1808 to non-ASCII location functionality of the requests library.
+	+ `test_fragment_not_sent_with_request`: Tests the fragment not sent with request functionality of the requests library.
+	+ `test_fragment_update_on_redirect`: Tests the fragment update on redirect functionality of the requests library.
+	+ `test_json_decode_compatibility_for_alt_utf_encodings`: Tests the JSON decode compatibility for alternative UTF encodings functionality of the requests library.
+* `tests/test_packages.py`:
+	+ `test_can_access_urllib3_attribute`: Tests the can access urllib3 attribute functionality of the requests library.
+	+ `test_can_access_idna_attribute`: Tests the can access idna attribute functionality of the requests library.
+	+ `test_can_access_chardet_attribute`: Tests the can access chardet attribute functionality of the requests library.
 * `tests/test_testserver.py`:
-	+ `TestTestServer`: tests the test server
-* `tests/test_utils.py`:
-	+ `TestSuperLen`: tests the `super_len` function
-	+ `TestGetNetrcAuth`: tests the `get_netrc_auth` function
-	+ `TestToKeyValList`: tests the `to_key_val_list` function
-	+ `TestUnquoteHeaderValue`: tests the `unquote_header_value` function
-	+ `TestGetEnvironProxies`: tests the `get_environ_proxies` function
-	+ `TestIsIPv4Address`: tests the `is_ipv4_address` function
-	+ `TestIsValidCIDR`: tests the `is_valid_cidr` function
-	+ `TestAddressInNetwork`: tests the `address_in_network` function
-	+ `TestGuessFilename`: tests the `guess_filename` function
-	+ `TestExtractZippedPaths`: tests the `extract_zipped_paths` function
-	+ `TestContentEncodingDetection`: tests content encoding detection
-	+ `TestGuessJSONUTF`: tests guessing JSON UTF encoding
-	+ `test_get_auth_from_url`: tests getting auth from a URL
-	+ `test_requote_uri_with_unquoted_percents`: tests requoting a URI with unquoted percents
-	+ `test_unquote_unreserved`: tests unquoting unreserved characters
-	+ `test_dotted_netmask`: tests dotted netmasks
-	+ `test_select_proxies`: tests selecting proxies
-	+ `test_parse_dict_header`: tests parsing dict headers
-	+ `test__parse_content_type_header`: tests parsing content type headers
-	+ `test_get_encoding_from_headers`: tests getting encoding from headers
-	+ `test_iter_slices`: tests iterating over slices
-	+ `test_parse_header_links`: tests parsing header links
-	+ `test_prepend_scheme_if_needed`: tests prepending a scheme if needed
-	+ `test_to_native_string`: tests converting to a native string
-	+ `test_urldefragauth`: tests URL defragmentation with auth
-	+ `test_should_bypass_proxies`: tests whether to bypass proxies
-	+ `test_should_bypass_proxies_pass_only_hostname`: tests whether to bypass proxies with only a hostname
-	+ `test_add_dict_to_cookiejar`: tests adding a dict to a cookie jar
-	+ `test_unicode_is_ascii`: tests whether a Unicode string is ASCII
-	+ `test_should_bypass_proxies_no_proxy`: tests whether to bypass proxies with no proxy
-	+ `test_should_bypass_proxies_win_registry`: tests whether to bypass proxies with a Windows registry
-	+ `test_should_bypass_proxies_win_registry_bad_values`: tests whether to bypass proxies with a Windows registry and bad values
-	+ `test_set_environ`: tests setting environment variables
-	+ `test_set_environ_raises_exception`: tests setting environment variables raises an exception
-	+ `test_should_bypass_proxies_win_registry_ProxyOverride_value`: tests whether to bypass proxies with a Windows registry and a ProxyOverride value
+	+ `TestTestServer`: Tests the test server functionality of the requests library.
 
-**3.5 Test Dependencies**
+### 3.4 Test Server
 
-The test dependencies for this project include:
+The test server is implemented in `tests/testserver/server.py` and provides a simple server that can be used to test the requests library. The test server has the following functionality:
 
-* `docs/_static/requests-sidebar.png`
-* `ext/requests-logo-compressed.png`
-* `ext/requests-logo.ai`
-* `ext/requests-logo.png`
-* `ext/requests-logo.svg`
-* `src/requests/adapters.py`
-* `src/requests/api.py`
-* `src/requests/auth.py`
-* `src/requests/certs.py`
-* `src/requests/compat.py`
-* `src/requests/cookies.py`
-* `src/requests/exceptions.py`
-* `src/requests/help.py`
-* `src/requests/hooks.py`
-* `src/requests/models.py`
-* `src/requests/packages.py`
-* `src/requests/sessions.py`
-* `src/requests/status_codes.py`
-* `src/requests/structures.py`
-* `src/requests/utils.py`
-* `src/requests/_internal_utils.py`
-* `src/requests/__init__.py`
-* `src/requests/__version__.py`
-* `tests/compat.py`
-* `tests/test_structures.py`
-* `tests/test_utils.py`
-* `tests/utils.py`
-* `tests/certs/expired/Makefile`
-* `tests/certs/expired/README.md`
-* `tests/certs/expired/ca/ca-private.key`
-* `tests/certs/expired/ca/ca.cnf`
-* `tests/certs/expired/ca/ca.crt`
-* `tests/certs/expired/ca/ca.srl`
-* `tests/certs/expired/ca/Makefile`
-* `tests/certs/expired/server/cert.cnf`
-* `tests/certs/expired/server/Makefile`
-* `tests/certs/expired/server/server.csr`
-* `tests/certs/expired/server/server.key`
-* `tests/certs/expired/server/server.pem`
-* `tests/testserver/server.py`
+* `consume_socket_content`: Consumes the content of a socket.
+* `Server`: A simple server that can be used to test the requests library.
+* `TLSServer`: A TLS server that can be used to test the requests library.
 
-**3.6 Test Coverage**
+### 3.5 Test Dependencies Graph
 
-The test coverage for this project is as follows:
+The test dependencies graph shows the dependencies between the test files and the modules of the requests library. The graph is represented as a directed graph where each node represents a test file or a module of the requests library, and each edge represents a dependency between two nodes.
 
-* `tests/test_hooks.py`: 100%
-* `tests/test_lowlevel.py`: 100%
-* `tests/test_requests.py`: 100%
-* `tests/test_testserver.py`: 100%
-* `tests/test_utils.py`: 100%
+The test dependencies graph is as follows:
 
-Note: The test coverage percentages are based on the number of lines of code covered by the tests.
+* `tests/test_hooks.py` depends on:
+	+ `src/requests/hooks.py`
+	+ `src/requests/models.py`
+	+ `src/requests/sessions.py`
+	+ `src/requests/status_codes.py`
+	+ `src/requests/structures.py`
+	+ `src/requests/utils.py`
+	+ `src/requests/_internal_utils.py`
+	+ `src/requests/__init__.py`
+	+ `src/requests/__version__.py`
+	+ `tests/test_requests.py`
+* `tests/test_lowlevel.py` depends on:
+	+ `src/requests/adapters.py`
+	+ `src/requests/api.py`
+	+ `src/requests/auth.py`
+	+ `src/requests/certs.py`
+	+ `src/requests/compat.py`
+	+ `src/requests/cookies.py`
+	+ `src/requests/exceptions.py`
+	+ `src/requests/help.py`
+	+ `src/requests/hooks.py`
+	+ `src/requests/models.py`
+	+ `src/requests/packages.py`
+	+ `src/requests/sessions.py`
+	+ `src/requests/status_codes.py`
+	+ `src/requests/structures.py`
+	+ `src/requests/utils.py`
+	+ `src/requests/_internal_utils.py`
+	+ `src/requests/__init__.py`
+	+ `src/requests/__version__.py`
+	+ `tests/test_requests.py`
+	+ `tests/test_utils.py`
+	+ `tests/utils.py`
+	+ `tests/testserver/server.py`
+* `tests/test_packages.py` depends on:
+	+ `src/requests/packages.py`
+	+ `src/requests/sessions.py`
+	+ `src/requests/status_codes.py`
+	+ `src/requests/structures.py`
+	+ `src/requests/utils.py`
+	+ `src/requests/_internal_utils.py`
+	+ `src/requests/__init__.py`
+	+ `src/requests/__version__.py`
+	+ `tests/test_requests.py`
+* `tests/test_testserver.py` depends on:
+	+ `tests/testserver/server.py`
+	+ `src/requests/adapters.py`
+	+ `src/requests/api.py`
+	+ `src/requests/auth.py`
+	+ `src/requests/certs.py`
+	+ `src/requests/compat.py`
+	+ `src/requests/cookies.py`
+	+ `src/requests/exceptions.py`
+	+ `src/requests/help.py`
+	+ `src/requests/hooks.py`
+	+ `src/requests/models.py`
+	+ `src/requests/packages.py`
+	+ `src/requests/sessions.py`
+	+ `src/requests/status_codes.py`
+	+ `src/requests/structures.py`
+	+ `src/requests/utils.py`
+	+ `src/requests/_internal_utils.py`
+	+ `src/requests/__init__.py`
+	+ `src/requests/__version__.py`
+	+ `tests/test_requests.py`
+
+Note that this graph is not exhaustive and only shows the dependencies between the test files and the modules of the requests library. There may be additional dependencies between the test files and other modules or libraries.
 
 
 <div class="page-break"></div>
@@ -342,8 +351,8 @@ Note: The test coverage percentages are based on the number of lines of code cov
 graph TD
   docs_conf_py --> docs__static_requests_sidebar_png
   docs_conf_py --> ext_requests_logo_compressed_png
-  src_requests_adapters_py --> docs_dev_authors_rst
   src_requests_adapters_py --> docs_user_authentication_rst
+  src_requests_adapters_py --> docs_dev_authors_rst
   src_requests_auth_py --> _git_blame_ignore_revs
   src_requests_auth_py --> _gitignore
   src_requests_compat_py --> docs_user_authentication_rst
@@ -352,12 +361,12 @@ graph TD
   src_requests_cookies_py --> src_requests__internal_utils_py
   src_requests_exceptions_py --> src_requests_compat_py
   src_requests_exceptions_py --> tests_compat_py
-  src_requests_models_py --> docs_dev_authors_rst
   src_requests_models_py --> docs_user_authentication_rst
+  src_requests_models_py --> docs_dev_authors_rst
   src_requests_packages_py --> src_requests_compat_py
   src_requests_packages_py --> tests_compat_py
-  src_requests_sessions_py --> docs_dev_authors_rst
   src_requests_sessions_py --> docs_user_authentication_rst
+  src_requests_sessions_py --> docs_dev_authors_rst
   src_requests_status_codes_py --> src_requests_structures_py
   src_requests_status_codes_py --> tests_test_structures_py
   src_requests_structures_py --> src_requests_compat_py
