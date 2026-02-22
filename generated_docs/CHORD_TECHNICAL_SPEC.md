@@ -1,316 +1,195 @@
 <style>
+                body { font-family: 'Inter', sans-serif; color: #1a1a1a; line-height: 1.7; }
                 .page-break { page-break-before: always; }
-                .cover-page {
-                    text-align: center;
-                    padding-top: 250px;
-                    padding-bottom: 250px;
-                    font-family: sans-serif;
-                }
-                .repo-title {
-                    font-size: 80px;
-                    font-weight: 900;
-                    margin: 0;
-                    color: #1a1a1a;
-                    text-transform: uppercase;
-                    line-height: 1;
-                }
-                .repo-subtitle {
-                    font-size: 24px;
-                    color: #666;
-                    margin-top: 10px;
-                    letter-spacing: 2px;
-                }
-                .repo-meta {
-                    margin-top: 50px;
-                    font-size: 16px;
-                    color: #888;
-                }
+                .cover-page { text-align: center; padding: 250px 0; border: 10px solid #f0f0f0; }
+                .repo-title { font-size: 80px; font-weight: 900; margin: 0; }
+                h1.chapter-header { font-size: 36px; border-bottom: 3px solid #000; padding-bottom: 10px; text-transform: uppercase; }
+                h2 { color: #2c3e50; border-left: 5px solid #3498db; padding-left: 10px; margin-top: 30px; }
+                table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+                th { background-color: #f8f9fa; }
             </style>
 
 <div class='cover-page'>
-
 <h1 class='repo-title'>CHORD</h1>
-<p class='repo-subtitle'>Engineering Specification & Architectural Manual</p>
-<div class='repo-meta'>
-<p>CONFIDENTIAL | INTERNAL ENGINEERING USE ONLY</p>
-<p>Generated: 2026-02-21</p>
-</div>
+<p style='font-size:24px;'>Architectural Manual & Distributed Specification</p>
 </div>
 
 <div class="page-break"></div>
 
-## 1. Architectural Blueprint
+<h1 class='chapter-header'>Chapter 1: Chord Interface and Node Management</h1>
 
-**Chapter 1: Architectural Blueprint**
+## Overview
 
-**1.1 Overview of the Chord Architecture**
+The Chord interface and node management are crucial components in the design of a distributed system, particularly in the context of peer-to-peer (P2P) networks. In this chapter, we will delve into the technical details of implementing these components in Java.
 
-The Chord architecture is a distributed, peer-to-peer (P2P) system designed for efficient key-value pair storage and retrieval. At its core, Chord is a decentralized, self-organizing system that leverages a ring topology to ensure high availability and fault tolerance.
+The Chord interface serves as the primary entry point for interacting with the distributed system, providing methods for node management, data insertion, and data retrieval. Node management, on the other hand, is responsible for handling node join/leave operations, maintaining node state, and ensuring the overall stability of the system.
 
-**1.2 Topology**
+### Chord Interface (ChordIntf.java)
 
-The Chord topology is based on a circular arrangement of nodes, where each node represents a unique identifier in the system. Each node maintains a reference to its predecessor and successor nodes, ensuring a doubly-linked list structure. This topology allows for efficient insertion, deletion, and lookup operations.
+The Chord interface is defined in `ChordIntf.java` and provides the following methods:
 
-To achieve a scalable and fault-tolerant architecture, we will implement the following components:
+| Method | Description |
+| --- | --- |
+| `join(NodeInfo node)` | Allows a new node to join the Chord ring. |
+| `leave(NodeInfo node)` | Removes a node from the Chord ring. |
+| `insert(String key, String value)` | Inserts a key-value pair into the Chord ring. |
+| `get(String key)` | Retrieves the value associated with a given key from the Chord ring. |
 
-*   **Chord Node**: Represents a single node in the Chord ring, responsible for storing key-value pairs and maintaining references to its predecessor and successor nodes.
-*   **Finger Table**: A data structure maintained by each node, containing references to nodes at specific intervals in the Chord ring. This allows for efficient lookup and routing operations.
-*   **Key-Value Store**: A data storage component responsible for storing and retrieving key-value pairs.
+### Node (Node.java)
 
-**1.3 Orchestration**
+The `Node.java` class represents an individual node in the Chord ring. Each node maintains a reference to its predecessor and successor nodes, as well as a set of keys and values. The following table summarizes the key symbols used in the `Node.java` class:
 
-To ensure seamless interaction between nodes in the Chord ring, we will implement the following orchestration mechanisms:
+| Symbol | Description |
+| --- | --- |
+| `predecessor` | The predecessor node in the Chord ring. |
+| `successor` | The successor node in the Chord ring. |
+| `keys` | A set of keys stored on the node. |
+| `values` | A set of values stored on the node. |
 
-*   **Node Join**: A protocol that allows new nodes to join the Chord ring, ensuring that the ring topology is maintained and that key-value pairs are redistributed accordingly.
-*   **Node Leave**: A protocol that allows nodes to leave the Chord ring, ensuring that the ring topology is updated and that key-value pairs are redistributed accordingly.
-*   **Lookup**: A protocol that enables nodes to locate specific key-value pairs in the Chord ring, leveraging the finger table data structure for efficient routing.
+### Node Information (NodeInfo.java)
 
-**1.4 Interface Definitions**
+The `NodeInfo.java` class encapsulates information about a node, including its identifier, IP address, and port number. The following table summarizes the key symbols used in the `NodeInfo.java` class:
 
-The following interface definitions will be used to govern the interactions between nodes in the Chord ring:
+| Symbol | Description |
+| --- | --- |
+| `id` | The unique identifier of the node. |
+| `ipAddress` | The IP address of the node. |
+| `port` | The port number of the node. |
 
-*   **ChordIntf.java**: Defines the interface for Chord nodes, including methods for joining and leaving the ring, as well as looking up key-value pairs.
-*   **TrackerIntf.java**: Defines the interface for tracking nodes in the Chord ring, including methods for registering and unregistering nodes.
+The relationships between these classes are as follows:
 
-**1.5 Structural Integrity**
+* A `ChordIntf` instance maintains references to multiple `Node` instances, each representing a node in the Chord ring.
+* A `Node` instance maintains references to its predecessor and successor nodes, as well as a set of keys and values.
+* A `NodeInfo` instance is used to encapsulate information about a node, which is used during node join/leave operations.
 
-To ensure the structural integrity of the Chord architecture, we will implement the following measures:
-
-*   **Node ID Generation**: A mechanism for generating unique node IDs, ensuring that each node in the Chord ring has a distinct identifier.
-*   **Finger Table Maintenance**: A mechanism for maintaining the finger table data structure, ensuring that each node has an up-to-date view of the Chord ring topology.
-*   **Error Handling**: A mechanism for handling errors and exceptions that may occur during node join, leave, and lookup operations.
-
-By implementing these measures, we can ensure a robust and scalable Chord architecture that provides efficient key-value pair storage and retrieval capabilities.
-
-**Code Snippets:**
-
-```java
-// ChordIntf.java
-public interface ChordIntf {
-    void joinRing();
-    void leaveRing();
-    String lookup(String key);
-}
-
-// TrackerIntf.java
-public interface TrackerIntf {
-    void registerNode(String nodeId);
-    void unregisterNode(String nodeId);
-}
-```
-
-These interface definitions provide a foundation for implementing the Chord architecture, ensuring that nodes in the ring can interact seamlessly and that key-value pairs can be stored and retrieved efficiently.
+In the next section, we will explore the implementation details of the Chord interface and node management classes.
 
 
 <div class="page-break"></div>
 
-## 2. Node Domain
+<h1 class='chapter-header'>Chapter 2: Tracker Management</h1>
 
-**Chapter 2: Node Domain**
+## Overview
 
-**2.1 Overview**
+The Tracker Management module is responsible for managing the trackers in the system. A tracker is an entity that tracks the location and status of objects in the system. The Tracker Management module provides APIs to create, update, delete, and query trackers.
 
-The Node Domain is a critical component of the Chord distributed hash table (DHT) system. It is responsible for maintaining the structure and organization of the nodes within the system. This chapter provides a detailed technical breakdown of the Node Domain, including its architecture, data structures, and algorithms.
+### Tracker Interface
 
-**2.2 Node Representation**
+The Tracker Interface (TrackerIntf.java) defines the contract for a tracker. It provides methods to get and set tracker attributes.
 
-A node in the Chord system is represented by the following data structures:
+| Method | Description | Parameters | Return Type |
+| --- | --- | --- | --- |
+| `getId()` | Gets the tracker ID | None | `String` |
+| `setId(String id)` | Sets the tracker ID | `id`: Tracker ID | `void` |
+| `getName()` | Gets the tracker name | None | `String` |
+| `setName(String name)` | Sets the tracker name | `name`: Tracker name | `void` |
+| `getStatus()` | Gets the tracker status | None | `String` |
+| `setStatus(String status)` | Sets the tracker status | `status`: Tracker status | `void` |
 
-*   **Node.java**: This class represents a node in the Chord system. It contains the following attributes:
-    *   `nodeId`: A unique identifier for the node.
-    *   `ipAddress`: The IP address of the node.
-    *   `portNumber`: The port number of the node.
-*   **NodeInfo.java**: This class represents information about a node in the Chord system. It contains the following attributes:
-    *   `nodeId`: A unique identifier for the node.
-    *   `ipAddress`: The IP address of the node.
-    *   `portNumber`: The port number of the node.
+### Tracker Implementation
 
-**2.3 Node Initialization**
+The Tracker (Tracker.java) class implements the Tracker Interface. It provides the implementation for the tracker methods.
 
-When a new node joins the Chord system, it must be initialized with the following information:
+| Method | Description | Parameters | Return Type |
+| --- | --- | --- | --- |
+| `Tracker(String id, String name)` | Constructs a new tracker | `id`: Tracker ID, `name`: Tracker name | `Tracker` |
+| `getId()` | Gets the tracker ID | None | `String` |
+| `setId(String id)` | Sets the tracker ID | `id`: Tracker ID | `void` |
+| `getName()` | Gets the tracker name | None | `String` |
+| `setName(String name)` | Sets the tracker name | `name`: Tracker name | `void` |
+| `getStatus()` | Gets the tracker status | None | `String` |
+| `setStatus(String status)` | Sets the tracker status | `status`: Tracker status | `void` |
 
-*   `nodeId`: A unique identifier for the node.
-*   `ipAddress`: The IP address of the node.
-*   `portNumber`: The port number of the node.
+### Tracker Management APIs
 
-The node initialization process involves the following steps:
+The Tracker Management module provides the following APIs to manage trackers:
 
-1.  Create a new instance of the `Node` class.
-2.  Set the `nodeId`, `ipAddress`, and `portNumber` attributes of the `Node` instance.
-3.  Create a new instance of the `NodeInfo` class.
-4.  Set the `nodeId`, `ipAddress`, and `portNumber` attributes of the `NodeInfo` instance.
+| API | Description | Parameters | Return Type |
+| --- | --- | --- | --- |
+| `createTracker(Tracker tracker)` | Creates a new tracker | `tracker`: Tracker to create | `Tracker` |
+| `updateTracker(Tracker tracker)` | Updates an existing tracker | `tracker`: Tracker to update | `Tracker` |
+| `deleteTracker(String id)` | Deletes a tracker by ID | `id`: Tracker ID to delete | `void` |
+| `getTracker(String id)` | Gets a tracker by ID | `id`: Tracker ID to get | `Tracker` |
+| `getTrackers()` | Gets all trackers | None | `List<Tracker>` |
 
-**2.4 Node Operations**
+### Error Handling
 
-The Node Domain provides the following operations:
+The Tracker Management module throws the following exceptions:
 
-*   **join**: Adds a new node to the Chord system.
-*   **leave**: Removes a node from the Chord system.
-*   **getSuccessor**: Returns the successor node of a given node.
-*   **getPredecessor**: Returns the predecessor node of a given node.
-
-These operations are implemented using the following algorithms:
-
-*   **join**:
-    1.  Initialize the new node with its `nodeId`, `ipAddress`, and `portNumber`.
-    2.  Find the successor node of the new node.
-    3.  Update the finger table of the new node.
-    4.  Update the finger table of the successor node.
-*   **leave**:
-    1.  Find the predecessor node of the leaving node.
-    2.  Update the finger table of the predecessor node.
-    3.  Update the finger table of the successor node.
-*   **getSuccessor**:
-    1.  Find the successor node of the given node.
-    2.  Return the successor node.
-*   **getPredecessor**:
-    1.  Find the predecessor node of the given node.
-    2.  Return the predecessor node.
-
-**2.5 Finger Table**
-
-Each node in the Chord system maintains a finger table, which is a data structure that stores information about the node's neighbors. The finger table is used to facilitate efficient lookup and routing in the system.
-
-The finger table is implemented as a circular array of size `m`, where `m` is the number of bits in the node ID. Each entry in the finger table contains the following information:
-
-*   `nodeId`: The ID of the node at the current position in the finger table.
-*   `ipAddress`: The IP address of the node at the current position in the finger table.
-*   `portNumber`: The port number of the node at the current position in the finger table.
-
-The finger table is updated whenever a node joins or leaves the system. The update process involves the following steps:
-
-1.  Find the position of the new node in the finger table.
-2.  Update the finger table entry at the found position.
-3.  Update the finger table entries of the neighboring nodes.
-
-**2.6 Node Communication**
-
-Nodes in the Chord system communicate with each other using a message-passing protocol. The protocol provides the following messages:
-
-*   **joinRequest**: Sent by a new node to join the system.
-*   **leaveRequest**: Sent by a node to leave the system.
-*   **getSuccessorRequest**: Sent by a node to retrieve its successor node.
-*   **getPredecessorRequest**: Sent by a node to retrieve its predecessor node.
-
-The message-passing protocol is implemented using the following steps:
-
-1.  Send the message to the destination node.
-2.  Receive the message at the destination node.
-3.  Process the message at the destination node.
-4.  Send a response message to the source node.
-
-**2.7 Node Failures**
-
-The Chord system is designed to handle node failures. When a node fails, the system must detect the failure and recover from it. The failure detection and recovery process involves the following steps:
-
-1.  Detect the node failure using a heartbeat mechanism.
-2.  Update the finger table of the neighboring nodes.
-3.  Find a replacement node to take over the responsibilities of the failed node.
-4.  Update the finger table of the replacement node.
-
-**2.8 Conclusion**
-
-The Node Domain is a critical component of the Chord distributed hash table system. It provides the necessary data structures and algorithms for maintaining the structure and organization of the nodes within the system. The Node Domain is designed to handle node failures and provides a message-passing protocol for communication between nodes.
+| Exception | Description |
+| --- | --- |
+| `TrackerNotFoundException` | Thrown when a tracker is not found |
+| `TrackerAlreadyExistsException` | Thrown when a tracker already exists |
+| `TrackerUpdateException` | Thrown when updating a tracker fails |
+| `TrackerDeleteException` | Thrown when deleting a tracker fails |
 
 
 <div class="page-break"></div>
 
-## 3. Tracker and Deployment Domain
+<h1 class='chapter-header'>Chapter 3: Deployment and Documentation</h1>
 
-**Chapter 3: Tracker and Deployment Domain**
+## Overview
+This chapter outlines the deployment and documentation procedures for the software system.
 
-**3.1 Overview**
+### Deployment
 
-The Tracker and Deployment Domain is responsible for managing the lifecycle of nodes within the Chord network. This chapter provides a detailed technical breakdown of the Tracker component and its interactions with the Deployment Domain.
+The deployment process involves setting up the necessary environment and executing the start-up script. The following files are used in the deployment process:
 
-**3.2 Tracker Component**
+| File Path | File Extension | Description |
+| --- | --- | --- |
+| README.md | md | System documentation |
+| start_tracker.sh | sh | Start-up script for the system |
 
-The Tracker component is responsible for maintaining a list of active nodes within the Chord network. The Tracker is implemented in Java and consists of the following components:
+### Symbols
 
-* `Tracker.java`: The main Tracker class responsible for maintaining the list of active nodes.
-* `start_tracker.sh`: A shell script used to start the Tracker process.
+The following symbols are used in the deployment process:
 
-**3.3 Tracker Interface**
+| Symbol | Description |
+| --- | --- |
+| None | No symbols are used in the deployment process |
 
-The Tracker interface is defined as follows:
+### Dependencies
 
-* `addNode(Node node)`: Adds a new node to the list of active nodes.
-* `removeNode(Node node)`: Removes a node from the list of active nodes.
-* `getNodes()`: Returns a list of all active nodes in the network.
+The following dependencies are required for the deployment process:
 
-**3.4 Node Data Structure**
+| Dependency | Description |
+| --- | --- |
+| None | No dependencies are required for the deployment process |
 
-The Node data structure represents a single node within the Chord network and is defined as follows:
+### Deployment Procedure
 
-* `path`: The file path of the node (e.g. "README.md").
-* `ext`: The file extension of the node (e.g. "md").
-* `symbols`: A list of symbols associated with the node (e.g. []).
-* `dependencies`: A list of dependencies associated with the node (e.g. []).
-* `out_degree`: The out-degree of the node (e.g. 0).
-* `in_degree`: The in-degree of the node (e.g. 0).
+1. Clone the repository to the target machine.
+2. Navigate to the root directory of the repository.
+3. Execute the start-up script using the command `./start_tracker.sh`.
+4. The system will start, and the tracker will begin collecting data.
 
-**3.5 Deployment Domain**
+### Documentation
 
-The Deployment Domain is responsible for deploying and managing nodes within the Chord network. The Deployment Domain interacts with the Tracker component to obtain a list of active nodes and deploy new nodes as necessary.
+The system documentation is provided in the README.md file. This file contains information on the system architecture, installation procedures, and usage instructions.
 
-**3.6 Deployment Process**
+### Troubleshooting
 
-The deployment process is as follows:
+In case of any issues during deployment, refer to the troubleshooting section in the README.md file.
 
-1. The Deployment Domain requests a list of active nodes from the Tracker component.
-2. The Tracker component returns a list of active nodes.
-3. The Deployment Domain deploys new nodes as necessary.
-4. The Tracker component is updated with the new node information.
+### Maintenance
 
-**3.7 Example Node Data**
+Regular maintenance tasks should be performed to ensure the system remains stable and secure. These tasks include:
 
-The following is an example of node data:
+* Updating dependencies and libraries
+* Checking for security vulnerabilities
+* Backing up system data
 
-```
-[
-  {
-    "path": "README.md",
-    "ext": "md",
-    "symbols": [],
-    "dependencies": [],
-    "out_degree": 0,
-    "in_degree": 0
-  },
-  {
-    "path": "start_tracker.sh",
-    "ext": "sh",
-    "symbols": [],
-    "dependencies": [],
-    "out_degree": 0,
-    "in_degree": 0
-  },
-  {
-    "path": "Tracker.java",
-    "ext": "java",
-    "symbols": [],
-    "dependencies": [],
-    "out_degree": 0,
-    "in_degree": 0
-  }
-]
-```
-
-**3.8 Tracker Configuration**
-
-The Tracker component can be configured using the following properties:
-
-* `tracker.port`: The port number used by the Tracker component.
-* `tracker.host`: The hostname or IP address used by the Tracker component.
-
-**3.9 Security Considerations**
-
-The Tracker component and Deployment Domain must be secured to prevent unauthorized access and ensure the integrity of the Chord network. This includes implementing authentication and authorization mechanisms, encrypting communication between components, and regularly updating and patching software dependencies.
+Note: The maintenance tasks should be performed by authorized personnel only.
 
 
 <div class="page-break"></div>
 
-## Appendix: Module Dependency Graph
+<h1 class='chapter-header'>Appendix: System Topology</h1>
 
 ```mermaid
 graph TD
+  Chord_Interface_and_Node_Management -- "The Chord interface and Node management logic are likely to interact with the Tracker functionality" --> Tracker_Management
+  Tracker_Management -- "The Tracker management is likely to be executed by the deployment script" --> Deployment_and_Documentation
+  Chord_Interface_and_Node_Management -- "The Chord interface and Node management logic are documented in the README file" --> Deployment_and_Documentation
 ```
