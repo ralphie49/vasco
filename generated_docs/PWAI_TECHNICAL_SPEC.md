@@ -1,17 +1,18 @@
 <style>
-                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; }
+                body { font-family: 'Inter', sans-serif; color: #1a1a1a; line-height: 1.7; }
                 .page-break { page-break-before: always; }
-                .cover-page { text-align: center; padding-top: 250px; padding-bottom: 250px; }
-                .repo-title { font-size: 72px; font-weight: 900; color: #1a1a1a; text-transform: uppercase; margin: 0; }
-                .repo-subtitle { font-size: 24px; color: #666; margin-top: 10px; border-top: 2px solid #eee; display: inline-block; padding-top: 10px; }
-                h1.chapter-header { font-size: 42px; color: #000; border-bottom: 5px solid #000; padding-bottom: 10px; margin-bottom: 30px; text-transform: uppercase; }
-                h2 { font-size: 28px; color: #2c3e50; margin-top: 40px; border-left: 8px solid #3498db; padding-left: 15px; }
+                .cover-page { text-align: center; padding: 250px 0; border: 10px solid #f0f0f0; }
+                .repo-title { font-size: 80px; font-weight: 900; margin: 0; }
+                h1.chapter-header { font-size: 36px; border-bottom: 3px solid #000; padding-bottom: 10px; text-transform: uppercase; }
+                h2 { color: #2c3e50; border-left: 5px solid #3498db; padding-left: 10px; margin-top: 30px; }
+                table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+                th { background-color: #f8f9fa; }
             </style>
 
 <div class='cover-page'>
 <h1 class='repo-title'>PWAI</h1>
-<p class='repo-subtitle'>Automated Engineering Specification</p>
-<p style='margin-top:40px; color:#999;'>GENERATED: 2026-02-22 | REF: PWAI-V1</p>
+<p style='font-size:24px;'>Architectural Manual & Distributed Specification</p>
 </div>
 
 <div class="page-break"></div>
@@ -20,266 +21,268 @@
 
 ## Overview
 
-Project Orchestration is a critical component of the PWAI framework, responsible for managing the workflow and interactions between various components. In this chapter, we will delve into the design and implementation of the Project Orchestration module, with a focus on the `orchestrator.py` file.
+Project orchestration is a critical component of any software development endeavor, providing the structural framework that governs the interactions between various components of a project. In the context of the provided project structure, the `orchestrator.py` module serves as the central hub for project orchestration.
 
-## Design Patterns
+### Module Dependencies
 
-The Project Orchestration module employs the Mediator design pattern, which enables the orchestration of multiple components while minimizing direct dependencies between them. The Mediator pattern allows for loose coupling, making it easier to modify or replace individual components without affecting the overall system.
+The `orchestrator.py` module exhibits a moderate level of interconnectedness, with an out-degree of 2 and an in-degree of 1. This implies that the module is dependent on two external modules (`code_generation.py` and `code_testing.py`), while also being a dependency for a single external module.
 
-### Orchestration Workflow
+### Symbols
 
-The orchestration workflow is managed by the `orchestrate_multi_file` function, which coordinates the execution of multiple files and ensures that the dependencies between them are properly resolved.
+The following table outlines the symbols defined within the `orchestrator.py` module:
 
-### Symbols and Dependencies
-
-The `orchestrator.py` file contains the following symbols and dependencies:
-
-| Symbol | Description |
+| Symbol Name | Description |
 | --- | --- |
-| `get_framework_blueprint` | Retrieves the framework blueprint for the project |
-| `orchestrate_multi_file` | Orchestrates the execution of multiple files |
+| `get_framework_blueprint` | Retrieves a blueprint for the project framework, providing a structural foundation for subsequent development. |
+| `orchestrate_multi_file` | Orchestrates the processing of multiple files, ensuring a cohesive and streamlined approach to project development. |
 
-| Dependency | Description |
-| --- | --- |
-| `code_generation.py` | Provides code generation functionality |
-| `code_testing.py` | Provides code testing functionality |
+### Module Structure
 
-The dependencies between the `orchestrator.py` file and other components are as follows:
+The `orchestrator.py` module is composed of a set of interrelated functions and variables that collectively facilitate project orchestration. The module's structure can be represented as follows:
 
-| File | Out Degree | In Degree |
-| --- | --- | --- |
-| `orchestrator.py` | 2 | 1 |
+* `orchestrator.py`
+	+ `get_framework_blueprint`
+	+ `orchestrate_multi_file`
+	+ Dependencies:
+		- `code_generation.py`
+		- `code_testing.py`
 
-The `out_degree` of 2 indicates that the `orchestrator.py` file has dependencies on two other files, while the `in_degree` of 1 indicates that one other file depends on `orchestrator.py`.
+### Design Patterns
 
-## Implementation
+The `orchestrator.py` module embodies several key design patterns that enable effective project orchestration:
 
-The `orchestrator.py` file is implemented in Python and utilizes the Mediator design pattern to manage the workflow and interactions between components. The `get_framework_blueprint` function retrieves the framework blueprint for the project, while the `orchestrate_multi_file` function coordinates the execution of multiple files.
+* **Facade Pattern**: The `get_framework_blueprint` function serves as a facade, providing a simplified interface for accessing the project framework.
+* **Mediator Pattern**: The `orchestrate_multi_file` function acts as a mediator, coordinating the interactions between multiple files and ensuring a cohesive approach to project development.
 
-### Code Snippet
-
-```python
-# orchestrator.py
-
-def get_framework_blueprint(project_config):
-    # Retrieve the framework blueprint for the project
-    pass
-
-def orchestrate_multi_file(files, dependencies):
-    # Coordinate the execution of multiple files
-    pass
-```
-
-## Conclusion
-
-In this chapter, we have explored the design and implementation of the Project Orchestration module, with a focus on the `orchestrator.py` file. The Mediator design pattern has been employed to manage the workflow and interactions between components, ensuring loose coupling and flexibility. The `orchestrator.py` file provides the necessary functionality for orchestrating the execution of multiple files and resolving dependencies between them.
+By leveraging these design patterns, the `orchestrator.py` module provides a robust and maintainable framework for project orchestration.
 
 
 <div class="page-break"></div>
 
-<h1 class='chapter-header'>Chapter 2: Code Generation and Planning</h1>
+<h1 class='chapter-header'>Chapter 2: Application Entry Point</h1>
 
 ## Overview
 
-The Planning and Workflow Automation Interface (PWAI) relies heavily on code generation and planning to automate tasks. This chapter delves into the intricacies of the code generation process, highlighting the key components, their interactions, and the underlying data structures.
+The application entry point is defined in the `app.py` file, which serves as the primary entry point for the application. This module is responsible for initializing the application and orchestrating its various components.
 
-## Code Generation
+### Module Details
 
-Code generation is a crucial aspect of PWAI, enabling the system to create executable code based on predefined templates and parameters. The following section outlines the code generation process and its constituent parts.
+| Attribute | Description | Value |
+| --- | --- | --- |
+| Path | The file path of the module | app.py |
+| Extension | The file extension of the module | py |
+| Dependencies | The modules that this module depends on | orchestrator.py |
+| Out Degree | The number of modules that this module depends on | 1 |
+| In Degree | The number of modules that depend on this module | 0 |
 
-### Code Generation Components
+### Symbols
 
-| Component | Description |
-| --- | --- |
-| `code_generation.py` | A Python module containing the `generate_project_plan` function, responsible for generating executable code based on input parameters. |
-| `app.py` | The main application file, serving as the entry point for the PWAI system. It contains the `main` function, which orchestrates the code generation process. |
+| Symbol | Description | Type |
+| --- | --- | --- |
+| main | The main entry point of the application | Function |
+
+### main Function
+
+The `main` function is the primary entry point of the application. It is responsible for initializing the application and orchestrating its various components. The function has no parameters and does not return any value.
+
+### Dependencies
+
+The `app.py` module depends on the `orchestrator.py` module, which provides the necessary functionality for orchestrating the application's components.
+
+### Sequence of Operations
+
+1. The `main` function is called, which initializes the application.
+2. The `main` function imports the necessary modules, including `orchestrator.py`.
+3. The `main` function calls the necessary functions in `orchestrator.py` to orchestrate the application's components.
+4. The application is started, and the necessary components are initialized and started.
+
+### Error Handling
+
+Any errors that occur during the execution of the `main` function are handled by the application's error handling mechanism, which is described in a separate chapter.
+
+
+<div class="page-break"></div>
+
+<h1 class='chapter-header'>Chapter 3: Code Generation</h1>
+
+## Overview
+The code generation module is responsible for generating the necessary code for the project plan and test cases. This chapter provides an overview of the code generation process and the key components involved.
+
+### Code Generation Module
+The code generation module consists of two main files: `code_generation.py` and `code_testcases.py`. These files contain the necessary functions and symbols to generate the project plan and test cases.
+
+### Symbols
+The following table lists the symbols used in the code generation module:
+
+| Symbol | Description | File |
+| --- | --- | --- |
+| `generate_project_plan` | Function to generate the project plan | `code_generation.py` |
+| `generate_testcases` | Function to generate test cases | `code_testcases.py` |
+
+### Dependencies
+The code generation module has no dependencies on other modules.
+
+### Module Interactions
+The following table lists the interactions between the code generation module and other modules:
+
+| Module | Interaction | Description |
+| --- | --- | --- |
+| `code_generation.py` | Input | Receives input from the project planning module |
+| `code_testcases.py` | None | No interactions with other modules |
 
 ### Code Generation Process
-
 The code generation process involves the following steps:
 
-1. **Initialization**: The `main` function in `app.py` is executed, triggering the code generation process.
-2. **Parameter Collection**: The `main` function collects input parameters and passes them to the `generate_project_plan` function in `code_generation.py`.
-3. **Code Generation**: The `generate_project_plan` function generates executable code based on the input parameters and predefined templates.
-4. **Output**: The generated code is returned to the `main` function, which executes or stores it as needed.
+1. **Project Plan Generation**: The `generate_project_plan` function in `code_generation.py` generates the project plan based on the input received from the project planning module.
+2. **Test Case Generation**: The `generate_testcases` function in `code_testcases.py` generates test cases based on the project plan generated in step 1.
 
-### File Symbols
+### Code Structure
+The code generation module follows the following structure:
 
-The following table describes the symbols used in the code generation process:
+* `code_generation.py`:
+	+ `generate_project_plan` function
+* `code_testcases.py`:
+	+ `generate_testcases` function
 
-| File | Symbols | Description |
+### Data Flow
+The following table lists the data flow between the code generation module and other modules:
+
+| Module | Input | Output |
 | --- | --- | --- |
-| `app.py` | `main` | The entry point of the PWAI system, responsible for orchestrating the code generation process. |
-| `code_generation.py` | `generate_project_plan` | A function responsible for generating executable code based on input parameters. |
+| `code_generation.py` | Project planning data | Project plan |
+| `code_testcases.py` | Project plan | Test cases |
 
-## Planning Data
+### Control Flow
+The following table lists the control flow between the code generation module and other modules:
 
-The planning data consists of a list of dictionaries, each representing a file in the PWAI system. The dictionaries contain the following keys:
+| Module | Control Flow |
+| --- | --- |
+| `code_generation.py` | Receives control from project planning module |
+| `code_testcases.py` | No control flow interactions with other modules |
 
-* `path`: The file path.
-* `ext`: The file extension.
-* `symbols`: A list of symbols (functions, variables, etc.) defined in the file.
-* `dependencies`: A list of files that the current file depends on.
-* `out_degree`: The number of files that the current file depends on.
-* `in_degree`: The number of files that depend on the current file.
 
-The planning data is used to analyze the dependencies between files and optimize the code generation process.
+<div class="page-break"></div>
 
-### Planning Data Example
+<h1 class='chapter-header'>Chapter 4: Code Testing and Validation</h1>
 
-```json
-[
-  {
-    "path": "app.py",
-    "ext": "py",
-    "symbols": ["main"],
-    "dependencies": ["orchestrator.py"],
-    "out_degree": 1,
-    "in_degree": 0
-  },
-  {
-    "path": "code_generation.py",
-    "ext": "py",
-    "symbols": ["generate_project_plan"],
-    "dependencies": [],
-    "out_degree": 0,
-    "in_degree": 1
-  }
-]
+## Overview
+This chapter describes the testing and validation of the code. The code is written in Python and is located in the file `code_testing.py`. The code consists of seven functions: `create_project_directory`, `run_subprocess`, `test_maven_project`, `test_javac_project`, `test_python_project`, `test_project`, and `cleanup_directory`.
+
+### Symbols
+The following table lists the symbols used in the code:
+
+| Symbol | Description | Parameters | Return Value |
+| --- | --- | --- | --- |
+| `create_project_directory` | Creates a new project directory | `project_name`: str | None |
+| `run_subprocess` | Runs a subprocess with the given command | `command`: str | int (return code) |
+| `test_maven_project` | Tests a Maven project | `project_name`: str | bool (success) |
+| `test_javac_project` | Tests a Javac project | `project_name`: str | bool (success) |
+| `test_python_project` | Tests a Python project | `project_name`: str | bool (success) |
+| `test_project` | Tests a project of unknown type | `project_name`: str | bool (success) |
+| `cleanup_directory` | Cleans up the project directory | `project_name`: str | None |
+
+### Dependencies
+The code does not have any external dependencies.
+
+### Testing
+The code is tested by running the `test_maven_project`, `test_javac_project`, `test_python_project`, and `test_project` functions with sample project names.
+
+### Validation
+The code is validated by checking the return values of the `test_maven_project`, `test_javac_project`, `test_python_project`, and `test_project` functions.
+
+### Code Snippets
+The following code snippet shows the usage of the `create_project_directory` function:
+```python
+create_project_directory("my_project")
 ```
+The following code snippet shows the usage of the `run_subprocess` function:
+```python
+return_code = run_subprocess("mvn clean package")
+```
+The following code snippet shows the usage of the `test_maven_project` function:
+```python
+success = test_maven_project("my_maven_project")
+```
+### Error Handling
+The code uses try-except blocks to catch and handle exceptions. The following table lists the exceptions that are caught and handled:
 
-This example illustrates the planning data for the `app.py` and `code_generation.py` files, highlighting their dependencies and symbols.
+| Exception | Description | Handling |
+| --- | --- | --- |
+| `FileNotFoundError` | Raised when the project directory does not exist | Create the project directory |
+| `NotADirectoryError` | Raised when the project directory is not a directory | Raise a `ValueError` |
+| `ValueError` | Raised when the project name is invalid | Raise a `ValueError` |
+
+### Limitations
+The code has the following limitations:
+
+* It only supports testing Maven, Javac, and Python projects.
+* It does not support testing projects of other types.
+* It does not handle errors that occur during the testing process.
 
 
 <div class="page-break"></div>
 
-<h1 class='chapter-header'>Chapter 3: Testing and Validation</h1>
+<h1 class='chapter-header'>Chapter 5: Project Documentation and Configuration</h1>
 
 ## Overview
 
-This chapter provides an in-depth examination of the testing and validation mechanisms employed in the PWAI repository. The testing framework is designed to ensure the integrity and functionality of the codebase, providing a robust and reliable means of verifying the expected behavior of the system.
+This chapter outlines the project documentation and configuration files used in the project. The documentation and configuration files provide essential information for developers, maintainers, and users to understand the project's structure, dependencies, and requirements.
 
-## Testing Framework
+### Project Documentation Files
 
-The testing framework consists of two primary files: `code_testcases.py` and `code_testing.py`. These files contain a set of functions and symbols that facilitate the creation and execution of test cases.
+The project documentation files are listed in the following table:
 
-### Test Case Generation
+| File Path | File Extension | Description |
+| --- | --- | --- |
+| README.md | md | The README file provides an introduction to the project, its purpose, and its usage. |
+| .gitignore | gitignore | The .gitignore file specifies the files and directories to be ignored by the version control system. |
 
-The `code_testcases.py` file contains a single symbol: `generate_testcases`. This function is responsible for generating test cases based on predefined parameters.
+### Project Configuration Files
 
-| Symbol | Description |
+The project configuration files are listed in the following table:
+
+| File Path | File Extension | Description |
+| --- | --- | --- |
+| requirements.txt | txt | The requirements file lists the project's dependencies, including libraries and frameworks. |
+
+### Symbols
+
+There are no symbols defined in the project documentation and configuration files.
+
+### Dependencies
+
+There are no dependencies defined in the project documentation and configuration files.
+
+### File Dependencies
+
+The following table shows the file dependencies:
+
+| File Path | Out Degree | In Degree |
+| --- | --- | --- |
+| .gitignore | 0 | 0 |
+| README.md | 0 | 0 |
+| requirements.txt | 0 | 0 |
+
+Note: Out degree represents the number of files that the current file depends on, while in degree represents the number of files that depend on the current file.
+
+### File Extensions
+
+The following table shows the file extensions used in the project documentation and configuration files:
+
+| File Extension | Description |
 | --- | --- |
-| `generate_testcases` | Generates test cases based on predefined parameters |
-
-### Testing and Validation
-
-The `code_testing.py` file contains a set of symbols that facilitate the creation and execution of test cases. The symbols are described in the following table:
-
-| Symbol | Description |
-| --- | --- |
-| `create_project_directory` | Creates a project directory for testing purposes |
-| `run_subprocess` | Runs a subprocess to execute a test case |
-| `test_maven_project` | Tests a Maven project |
-| `test_javac_project` | Tests a Javac project |
-| `test_python_project` | Tests a Python project |
-| `test_project` | Tests a project based on the provided parameters |
-| `cleanup_directory` | Cleans up the project directory after testing |
-
-### Dependencies and Symbol Relationships
-
-The symbols in the `code_testing.py` file have the following dependencies and relationships:
-
-* `create_project_directory` is used by `test_maven_project`, `test_javac_project`, and `test_python_project`
-* `run_subprocess` is used by `test_maven_project`, `test_javac_project`, and `test_python_project`
-* `test_project` is the main entry point for testing a project
-* `cleanup_directory` is used by `test_project` to clean up the project directory after testing
-
-## Testing and Validation Process
-
-The testing and validation process involves the following steps:
-
-1. Create a project directory using `create_project_directory`
-2. Generate test cases using `generate_testcases`
-3. Run the test cases using `run_subprocess`
-4. Test the project using `test_project`
-5. Clean up the project directory using `cleanup_directory`
-
-## Conclusion
-
-The testing and validation mechanisms employed in the PWAI repository provide a robust and reliable means of verifying the expected behavior of the system. The testing framework is designed to ensure the integrity and functionality of the codebase, providing a high degree of confidence in the system's ability to perform as expected.
+| md | Markdown file extension used for the README file. |
+| gitignore | Git ignore file extension used for the .gitignore file. |
+| txt | Text file extension used for the requirements file. |
 
 
 <div class="page-break"></div>
 
-<h1 class='chapter-header'>Chapter 4: Project Setup and Configuration</h1>
-
-## Overview
-The project setup and configuration phase is a critical step in establishing a robust and maintainable codebase. This chapter outlines the essential files and configurations required to initialize the PWAI project.
-
-## Project Structure
-The project structure is designed to promote organization and separation of concerns. The following files are created at the root of the project:
-
-### Configuration Files
-
-| File Name | Description |
-| --- | --- |
-| `.gitignore` | Specifies files and directories to be ignored by the version control system. |
-| `README.md` | Provides an overview of the project, including setup instructions and usage guidelines. |
-| `requirements.txt` | Lists the dependencies required to run the project. |
-
-### File Descriptions
-
-#### .gitignore
-The `.gitignore` file is used to specify files and directories that should be ignored by the version control system. This file is essential in preventing unnecessary files from being committed to the repository.
-
-| Symbol | Description |
-| --- | --- |
-| None | This file does not contain any symbols. |
-
-#### README.md
-The `README.md` file provides an overview of the project, including setup instructions and usage guidelines. This file is written in Markdown format and is displayed on the project's repository page.
-
-| Symbol | Description |
-| --- | --- |
-| None | This file does not contain any symbols. |
-
-#### requirements.txt
-The `requirements.txt` file lists the dependencies required to run the project. This file is used by package managers to install the necessary dependencies.
-
-| Symbol | Description |
-| --- | --- |
-| None | This file does not contain any symbols. |
-
-## Dependencies
-The project dependencies are listed in the `requirements.txt` file. These dependencies are required to run the project and are installed using a package manager.
-
-### Dependency List
-
-* None
-
-## Configuration
-The project configuration is defined in the `.gitignore` and `requirements.txt` files. These files are used to specify the project's dependencies and ignore files.
-
-### Configuration Options
-
-* None
-
-## Best Practices
-To maintain a clean and organized codebase, the following best practices are recommended:
-
-* Regularly update the `README.md` file to reflect changes in the project.
-* Use the `.gitignore` file to ignore unnecessary files and directories.
-* Keep the `requirements.txt` file up-to-date with the latest dependencies.
-* Use a consistent naming convention throughout the project.
-
-
-<div class="page-break"></div>
-
-<h1 class='chapter-header'>Appendix: Dependency Graph</h1>
+<h1 class='chapter-header'>Appendix: System Topology</h1>
 
 ```mermaid
 graph TD
-  app_py --> orchestrator_py
-  orchestrator_py --> code_generation_py
-  orchestrator_py --> code_testing_py
+  app_py -->|imports| orchestrator_py
+  orchestrator_py -->|imports| code_generation_py
+  orchestrator_py -->|imports| code_testing_py
 ```

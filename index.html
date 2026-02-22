@@ -22,6 +22,8 @@
             --code-text: #000000;  
             --input-bg: #f8fafc;
             --input-text: #0f172a;
+            --accent-blue: #3b82f6;
+            --table-header-bg: #f8fafc;
         }
 
         .dark-mode {
@@ -37,6 +39,7 @@
             --code-text: #e2e8f0;  
             --input-bg: #1e293b;
             --input-text: #f8fafc;
+            --table-header-bg: #0f172a;
         }
 
         body { 
@@ -50,7 +53,14 @@
             overflow-y: auto; 
         }
 
-        nav { position: sticky; top: 0; z-index: 1000; flex-shrink: 0; }
+        nav { 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
+            flex-shrink: 0; 
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
         
         .main-content { 
             display: flex; 
@@ -100,6 +110,7 @@
             justify-content: center; 
             align-items: flex-start; 
             padding: 0; 
+            scroll-behavior: smooth;
         }
 
         #doc-page { 
@@ -118,11 +129,45 @@
             transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease;
         }
 
-        #doc-container, #doc-container * { color: var(--text-color) !important; }
+        /* --- DOCUMENT CONTENT SPECIFICS (Table Fixes) --- */
+        #doc-container { color: var(--text-color) !important; }
+        #doc-container * { color: inherit; }
         
+        #doc-container table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            border: 1px solid var(--border-color);
+        }
+
+        #doc-container th {
+            background-color: var(--table-header-bg) !important;
+            color: var(--text-color) !important;
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            padding: 12px;
+            border-bottom: 2px solid var(--border-color);
+            text-align: left;
+        }
+
+        #doc-container td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        #doc-container tr:nth-child(even) {
+            background-color: rgba(0,0,0,0.02);
+        }
+        .dark-mode #doc-container tr:nth-child(even) {
+            background-color: rgba(255,255,255,0.02);
+        }
+
         #doc-container pre { 
             background-color: var(--code-bg) !important; 
             padding: 24px; border-radius: 8px; border: 1px solid var(--border-color); margin: 24px 0; overflow-x: auto;
+            position: relative;
         }
         
         #doc-container pre code { 
@@ -159,18 +204,17 @@
         #cy-tooltip {
             position: fixed;
             display: none;
-            background: rgba(15, 23, 42, 0.9);
+            background: rgba(15, 23, 42, 0.95);
             color: white;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 600;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 12px;
             pointer-events: none;
             z-index: 3000;
-            white-space: nowrap;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(4px);
             border: 1px solid rgba(255,255,255,0.1);
+            line-height: 1.4;
         }
 
         #node-search {
@@ -194,42 +238,74 @@
             width: 38px; height: 38px; background: white; border: 1px solid var(--border-color);
             border-radius: 8px; display: flex; align-items: center; justify-content: center;
             font-size: 14px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); color: #64748b;
+            transition: all 0.2s;
         }
-        .graph-btn:hover { background: #f8fafc; color: #3b82f6; }
+        .graph-btn:hover { background: #f8fafc; color: #3b82f6; transform: translateY(-1px); }
+        .graph-btn:active { transform: translateY(0); }
         .dark-mode .graph-btn { background: #1e293b; color: #94a3b8; border-color: #334155; }
 
         .panel-header { background: var(--panel-bg); border-bottom: 1px solid var(--border-color); padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
-        .nav-icon { color: var(--icon-color); padding: 6px; cursor: pointer; background: none; border: none; font-size: 1.1rem; }
-        .formal-blue-btn { background-color: #cbd5e1; color: #1e293b; font-weight: 800; }
+        .nav-icon { color: var(--icon-color); padding: 6px; cursor: pointer; background: none; border: none; font-size: 1.1rem; transition: transform 0.2s; }
+        .nav-icon:hover { transform: scale(1.2); color: var(--accent-blue); }
+        .formal-blue-btn { background-color: #cbd5e1; color: #1e293b; font-weight: 800; transition: all 0.2s; }
+        .formal-blue-btn:hover { background-color: #94a3b8; }
 
+        @keyframes pulse-bg {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        .is-loading { animation: pulse-bg 2s infinite ease-in-out; pointer-events: none; }
+
+        /* PRINT FIX */
         @media print {
+            @page { margin: 10mm; }
             body, html { 
                 background: white !important;
+                color: black !important;
                 height: auto !important; 
                 overflow: visible !important; 
             }
-            nav, #map-panel, .panel-header, .graph-controls-container, .graph-title { display: none !important; }
+            nav, #map-panel, .panel-header, .graph-controls-container, .graph-title, #zoomRange, #zoomVal { 
+                display: none !important; 
+            }
             #doc-panel { 
                 position: static !important; 
                 width: 100% !important; 
                 height: auto !important; 
                 border: none !important; 
-                background: transparent !important;
+                background: white !important;
             }
-            #doc-viewport { overflow: visible !important; display: block !important; }
+            #doc-viewport { 
+                overflow: visible !important; 
+                display: block !important; 
+                background: white !important;
+            }
             #doc-page { 
                 transform: none !important; 
                 box-shadow: none !important; 
                 margin: 0 !important; 
                 width: 100% !important; 
                 padding: 0 !important;
-                -webkit-print-color-adjust: exact; 
-                print-color-adjust: exact;
+                background: white !important;
+                color: black !important;
             }
-            pre { 
-                white-space: pre-wrap !important; 
-                word-wrap: break-word !important;
-                -webkit-print-color-adjust: exact;
+            #doc-container, #doc-container *, #doc-container h1, #doc-container p, #doc-container li { 
+                color: black !important; 
+                background: transparent !important;
+            }
+            #doc-container th {
+                background: #f0f0f0 !important;
+                color: black !important;
+                border-bottom: 2px solid black !important;
+            }
+            #doc-container pre { 
+                background-color: #f5f5f5 !important; 
+                border: 1px solid #ccc !important;
+                color: black !important;
+                page-break-inside: avoid;
+            }
+            #doc-container pre code { 
+                color: black !important; 
             }
         }
     </style>
@@ -245,14 +321,14 @@
         </div>
         
         <div class="flex-1 flex justify-center">
-            <div class="flex items-center rounded-xl overflow-hidden shadow-2xl bg-white mx-4">
+            <div class="flex items-center rounded-xl overflow-hidden shadow-2xl bg-white mx-4 border-2 border-transparent focus-within:border-blue-400 transition-all">
                 <input id="repo-url" type="text" placeholder="PASTE REPOSITORY LINK" class="px-6 py-3 text-sm w-[400px] outline-none border-none text-slate-700">
                 <button onclick="ingestRepo()" id="btn-ingest" class="formal-blue-btn px-10 py-3 text-xs uppercase tracking-widest border-l border-slate-200">Analyze</button>
             </div>
         </div>
 
         <div class="flex items-center gap-4">
-            <button onclick="toggleDarkMode()" class="text-2xl mr-6">🌓</button>
+            <button onclick="toggleDarkMode()" class="text-2xl mr-6 hover:rotate-12 transition-transform">🌓</button>
         </div>
     </nav>
 
@@ -264,8 +340,7 @@
                     <span id="zoomVal" class="text-[10px] font-bold text-slate-500">80%</span>
                 </div>
                 <div class="flex gap-3">
-                    <button onclick="saveDocAs()" class="nav-icon" title="Save Document As">📥</button>
-                    <button onclick="window.print()" class="nav-icon" title="Print Document">🖨️</button>
+                    <button onclick="window.print()" class="nav-icon" title="Save Document As">📥</button>
                     <button onclick="toggleFocusMode()" class="nav-icon">⛶</button>
                 </div>
             </div>
@@ -283,7 +358,7 @@
             <div class="panel-header">
                 <div class="flex items-center gap-3">
                     <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 select-none cursor-default">Visualization</span>
-                    <input id="node-search" type="text" placeholder="SEARCH GRAPH..." class="px-3 py-1 rounded text-[10px] outline-none border border-slate-200 dark:border-slate-700 w-32 focus:w-40 transition-all" onkeyup="searchNodes(this.value)">
+                    <input id="node-search" type="text" placeholder="SEARCH (CTRL+K)" class="px-3 py-1 rounded text-[10px] outline-none border border-slate-200 dark:border-slate-700 w-32 focus:w-40 transition-all" onkeyup="searchNodes(this.value)">
                 </div>
                 <div class="flex gap-2">
                     <button onclick="saveGraphAs()" class="nav-icon" title="Save Graph As">📸</button>
@@ -317,10 +392,21 @@
         let layoutState = 0; 
         let currentRepoName = "repository";
 
+        window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                document.getElementById('node-search').focus();
+            }
+            if (e.key === 'Escape') {
+                if (document.getElementById('doc-panel').classList.contains('fullscreen-doc')) toggleFocusMode();
+                if (document.getElementById('map-panel').classList.contains('fullscreen-graph')) toggleGraphFullscreen();
+                resetGraph();
+            }
+        });
+
         function cycleLayout() {
             const docFS = document.getElementById('doc-panel').classList.contains('fullscreen-doc');
             const graphFS = document.getElementById('map-panel').classList.contains('fullscreen-graph');
-
             if (docFS || graphFS) {
                 document.getElementById('doc-panel').classList.remove('fullscreen-doc');
                 document.getElementById('map-panel').classList.remove('fullscreen-graph');
@@ -356,7 +442,7 @@
             } else if (layoutState === 2) {
                 body.classList.add('layout-focus-graph');
                 doc.classList.add('is-mini-hover');
-                updateZoom(0.35); slider.value = 0.35; 
+                updateZoom(0.40); slider.value = 0.40; 
             }
             
             if (cy) {
@@ -383,7 +469,7 @@
                     const blob = await response.blob();
                     await writable.write(blob);
                     await writable.close();
-                } catch (err) { console.error("Save cancelled or failed", err); }
+                } catch (err) { console.error("Save cancelled", err); }
             } else {
                 const userFileName = prompt("Enter file name:", fileName);
                 if (!userFileName) return;
@@ -394,37 +480,15 @@
             }
         }
 
-        async function saveDocAs() {
-            const docContent = document.getElementById('doc-container').innerText;
-            const defaultName = `${currentRepoName}-documentation.txt`;
-            
-            if (window.showSaveFilePicker) {
-                try {
-                    const handle = await window.showSaveFilePicker({
-                        suggestedName: defaultName,
-                        types: [{ description: 'Text File', accept: {'text/plain': ['.txt']} }],
-                    });
-                    const writable = await handle.createWritable();
-                    await writable.write(docContent);
-                    await writable.close();
-                } catch (err) { console.error("Save cancelled or failed", err); }
-            } else {
-                const userFileName = prompt("Enter file name:", defaultName);
-                if (!userFileName) return;
-                const blob = new Blob([docContent], { type: "text/plain" });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = userFileName.endsWith('.txt') ? userFileName : userFileName + '.txt';
-                link.click();
-            }
-        }
-
         function searchNodes(query) {
             if (!cy) return;
             cy.nodes().style('opacity', 1);
             if (!query) return;
             const matches = cy.nodes().filter(n => n.data('label').toLowerCase().includes(query.toLowerCase()));
             cy.nodes().difference(matches).style('opacity', 0.1);
+            if (matches.length > 0) {
+                cy.animate({ center: { eles: matches }, zoom: 1.2, duration: 500 });
+            }
         }
 
         function toggleFocusMode() {
@@ -460,11 +524,14 @@
         async function ingestRepo() {
             const btn = document.getElementById('btn-ingest');
             const urlInput = document.getElementById('repo-url').value;
+            const panels = document.querySelectorAll('.panel');
             if(!urlInput) return;
             
             try { currentRepoName = urlInput.split('/').filter(Boolean).pop().replace('.git', ''); } catch(e) { currentRepoName = "repository"; }
             
             btn.innerText = "RUNNING";
+            panels.forEach(p => p.classList.add('is-loading'));
+
             try {
                 const res = await fetch('http://127.0.0.1:8000/ingest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: urlInput }) });
                 const data = await res.json();
@@ -472,8 +539,11 @@
                 const genData = await genRes.json();
                 document.getElementById('doc-container').innerHTML = marked.parse(genData.markdown);
                 loadGraph();
-            } catch (e) { alert("Server Error"); }
-            finally { btn.innerText = "Analyze"; }
+            } catch (e) { alert("Server Error: Ensure backend is running."); }
+            finally { 
+                btn.innerText = "Analyze"; 
+                panels.forEach(p => p.classList.remove('is-loading'));
+            }
         }
 
         async function loadGraph() {
@@ -490,34 +560,41 @@
                         { 
                             selector: 'node', 
                             style: { 
-                                'label': (ele) => ele.data('label').length > 10 ? ele.data('label').substring(0, 8) + '...' : ele.data('label'),
+                                'label': (ele) => ele.data('label').length > 12 ? ele.data('label').substring(0, 10) + '...' : ele.data('label'),
                                 'color': isDarkMode ? '#f8fafc' : '#333', 'font-size': '10px', 'font-weight': '600',
                                 'width': 50, 'height': 50, 'background-color': (n) => n.data('label').includes('.') ? '#F79767' : '#67B7DC',
                                 'text-valign': 'center', 'text-halign': 'center',
-                                'border-width': 3, 'border-color': (n) => n.data('label').includes('.') ? '#f27e44' : '#4ba4d1'
+                                'border-width': 3, 'border-color': (n) => n.data('label').includes('.') ? '#f27e44' : '#4ba4d1',
+                                'transition-property': 'background-color, width, height',
+                                'transition-duration': '0.2s'
                             }
                         },
-                        { selector: 'edge', style: { 'width': 2, 'line-color': isDarkMode ? '#475569' : '#cbd5e1', 'target-arrow-shape': 'triangle', 'curve-style': 'bezier' } }
+                        { selector: 'edge', style: { 'width': 2, 'line-color': isDarkMode ? '#475569' : '#cbd5e1', 'target-arrow-shape': 'triangle', 'curve-style': 'bezier', 'opacity': 0.6 } },
+                        { selector: '.highlighted', style: { 'background-color': '#3b82f6', 'line-color': '#3b82f6', 'target-arrow-color': '#3b82f6', 'opacity': 1, 'width': 65, 'height': 65 } },
+                        { selector: '.faded', style: { 'opacity': 0.1 } }
                     ],
-                    layout: { name: 'cose', padding: 40 }
+                    layout: { name: 'cose', padding: 40, animate: true }
                 });
 
                 cy.on('mouseover', 'node', (e) => {
                     const node = e.target;
-                    node.style({'width': 60, 'height': 60});
-                    tooltip.innerText = node.data('label');
+                    const neighborhood = node.closedNeighborhood();
+                    cy.elements().addClass('faded');
+                    neighborhood.removeClass('faded').addClass('highlighted');
+                    tooltip.innerHTML = `<strong>${node.data('label')}</strong><br><span style="opacity:0.7; font-size:10px;">Type: ${node.data('label').includes('.') ? 'File' : 'Module'}</span>`;
                     tooltip.style.display = 'block';
                 });
 
                 cy.on('mousemove', 'node', (e) => {
-                    tooltip.style.top = (e.renderedPosition.y + document.getElementById('cy').getBoundingClientRect().top - 40) + 'px';
-                    tooltip.style.left = (e.renderedPosition.x + document.getElementById('cy').getBoundingClientRect().left + 10) + 'px';
+                    tooltip.style.top = (e.renderedPosition.y + document.getElementById('cy').getBoundingClientRect().top - 50) + 'px';
+                    tooltip.style.left = (e.renderedPosition.x + document.getElementById('cy').getBoundingClientRect().left + 15) + 'px';
                 });
 
                 cy.on('mouseout', 'node', (e) => {
-                    e.target.style({'width': 50, 'height': 50});
+                    cy.elements().removeClass('faded highlighted');
                     tooltip.style.display = 'none';
                 });
+
             } catch(e) { console.error("Graph failed to load", e); }
         }
 
