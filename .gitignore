@@ -7,6 +7,8 @@ wheels/
 *.egg-info
 repos
 repos/
+cloned_repos/
+generated_docs/
 # Virtual environments
 .venv
 
@@ -23,7 +25,8 @@ faiss_index_storage/
 temp_*/
 vector_db_cache/
 repo_cache/
-cloned_repos/
+cloned_repos_cache/
+generated_docs_cache/
 # Virtual Environments
 .venv/
 env/
