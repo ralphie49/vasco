@@ -1,741 +1,814 @@
 <style>
+                body { font-family: 'Inter', sans-serif; color: #1a1a1a; line-height: 1.7; }
                 .page-break { page-break-before: always; }
-                .cover-page {
-                    text-align: center;
-                    padding-top: 250px;
-                    padding-bottom: 250px;
-                    font-family: sans-serif;
-                }
-                .repo-title {
-                    font-size: 80px;
-                    font-weight: 900;
-                    margin: 0;
-                    color: #1a1a1a;
-                    text-transform: uppercase;
-                    line-height: 1;
-                }
-                .repo-subtitle {
-                    font-size: 24px;
-                    color: #666;
-                    margin-top: 10px;
-                    letter-spacing: 2px;
-                }
-                .repo-meta {
-                    margin-top: 50px;
-                    font-size: 16px;
-                    color: #888;
-                }
+                .cover-page { text-align: center; padding: 250px 0; border: 10px solid #f0f0f0; }
+                .repo-title { font-size: 80px; font-weight: 900; margin: 0; }
+                h1.chapter-header { font-size: 36px; border-bottom: 3px solid #000; padding-bottom: 10px; text-transform: uppercase; }
+                h2 { color: #2c3e50; border-left: 5px solid #3498db; padding-left: 10px; margin-top: 30px; }
+                table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+                th { background-color: #f8f9fa; }
             </style>
 
 <div class='cover-page'>
-
 <h1 class='repo-title'>HTTPIE</h1>
-<p class='repo-subtitle'>Engineering Specification & Architectural Manual</p>
-<div class='repo-meta'>
-<p>CONFIDENTIAL | INTERNAL ENGINEERING USE ONLY</p>
-<p>Generated: 2026-02-21</p>
-</div>
+<p style='font-size:24px;'>Architectural Manual & Distributed Specification</p>
 </div>
 
 <div class="page-break"></div>
 
-## 1. Architectural Blueprint
+<h1 class='chapter-header'>Chapter 1: Core Functionality</h1>
 
-**Chapter 1: Architectural Blueprint**
+## Overview
+The core functionality of HTTPie is comprised of several key components, including the client, core, models, and status modules. These components work together to provide the foundation for HTTPie's features and functionality.
 
-**System Topology**
+### Client Module
+The client module (`httpie/client.py`) contains the following symbols:
 
-The system is comprised of multiple Python modules, each serving a specific purpose. The modules are organized into several packages, including `httpie`, `httpie.cli`, `httpie.manager`, `httpie.output`, and `httpie.plugins`. The system also includes various utility modules and test files.
+| Symbol | Description |
+| --- | --- |
+| `collect_messages` | Collects messages from the request and response. |
+| `max_headers` | Returns the maximum number of headers allowed. |
+| `build_requests_session` | Builds a requests session object. |
+| `dump_request` | Dumps the request to the console. |
+| `finalize_headers` | Finalizes the headers for the request. |
+| `transform_headers` | Transforms the headers for the request. |
+| `apply_missing_repeated_headers` | Applies missing repeated headers. |
+| `make_default_headers` | Makes default headers for the request. |
+| `make_send_kwargs` | Makes send kwargs for the request. |
+| `make_send_kwargs_mergeable_from_env` | Makes send kwargs mergeable from the environment. |
+| `json_dict_to_request_body` | Converts a JSON dict to a request body. |
+| `make_request_kwargs` | Makes request kwargs. |
+| `ensure_path_as_is` | Ensures the path is as-is. |
 
-**Core Orchestration Pattern**
+### Core Module
+The core module (`httpie/core.py`) contains the following symbols:
 
-The core orchestration pattern in this system is the **Command-Line Interface (CLI) Pattern**. The CLI pattern is used to define a set of commands and subcommands that can be executed from the command line. The `httpie.cli` package contains the core CLI logic, including the `argparser` module, which defines the command-line arguments and options.
+| Symbol | Description |
+| --- | --- |
+| `raw_main` | The raw main function. |
+| `main` | The main function. |
+| `program` | The program function. |
+| `print_debug_info` | Prints debug information. |
+| `decode_raw_args` | Decodes raw arguments. |
 
-The CLI pattern is used in conjunction with the **Facade Pattern**, which provides a unified interface to the system's functionality. The `httpie.manager` package acts as a facade, providing a high-level interface to the system's features.
+### Models Module
+The models module (`httpie/models.py`) contains the following symbols:
 
-**Primary Entry Point**
+| Symbol | Description |
+| --- | --- |
+| `HTTPMessage` | Represents an HTTP message. |
+| `HTTPResponse` | Represents an HTTP response. |
+| `HTTPRequest` | Represents an HTTP request. |
+| `RequestsMessageKind` | Represents the kind of requests message. |
+| `infer_requests_message_kind` | Infers the requests message kind. |
+| `OutputOptions` | Represents output options. |
 
-The primary entry point of the system is the `httpie/manager/cli.py` module. This module defines the main CLI entry point, which is responsible for parsing command-line arguments and dispatching the corresponding commands.
+### Status Module
+The status module (`httpie/status.py`) contains the following symbols:
 
-The `httpie/manager/cli.py` module has a downstream impact on the following modules:
+| Symbol | Description |
+| --- | --- |
+| `ExitStatus` | Represents the exit status. |
+| `http_status_to_exit_status` | Converts an HTTP status to an exit status. |
 
-* `httpie/cli/argparser.py`: This module defines the command-line arguments and options.
-* `httpie/manager/core.py`: This module provides the core logic for dispatching commands.
-* `httpie/output/models.py`: This module defines the output models for the system.
-
-The `httpie/manager/cli.py` module is also dependent on several other modules, including `httpie/cli/utils.py`, `httpie/internal/daemons.py`, and `httpie/internal/update_warnings.py`.
-
-**Downstream Impact**
-
-The downstream impact of the `httpie/manager/cli.py` module is significant, as it affects the entire system's functionality. The module's dependencies and the modules it depends on are critical to the system's operation.
-
-The `httpie/cli/argparser.py` module, for example, is responsible for defining the command-line arguments and options. If this module is modified, it could impact the entire system's functionality.
-
-Similarly, the `httpie/manager/core.py` module provides the core logic for dispatching commands. If this module is modified, it could impact the system's ability to execute commands correctly.
-
-In conclusion, the `httpie/manager/cli.py` module is the primary entry point of the system, and its downstream impact is significant. The module's dependencies and the modules it depends on are critical to the system's operation, and any modifications to these modules could have a significant impact on the system's functionality.
-
-
-<div class="page-break"></div>
-
-## 2. Networking and Protocols
-
-**Chapter 2: Networking and Protocols**
-
-### 2.1 HTTP Adapters
-
-HTTPie utilizes a modular design for its HTTP adapters, allowing for easy extension and customization. The `HTTPieHTTPAdapter` class, defined in `httpie/adapters.py`, serves as the base adapter for all HTTP requests.
-
-*   The `HTTPieHTTPAdapter` class inherits from `requests.adapters.HTTPAdapter` and overrides the `send` method to handle HTTPie-specific features, such as request retries and SSL verification.
-*   The adapter also implements the `build_response` method, which constructs an HTTP response object from the raw response data.
-
-### 2.2 SSL/TLS Implementation
-
-HTTPie's SSL/TLS implementation is handled by the `HTTPieHTTPSAdapter` class, defined in `httpie/ssl_.py`. This adapter extends the `HTTPieHTTPAdapter` class and provides additional functionality for SSL/TLS connections.
-
-*   The `HTTPieHTTPSAdapter` class overrides the `send` method to handle SSL/TLS-specific features, such as certificate verification and key file encryption.
-*   The adapter also implements the `_is_key_file_encrypted` method, which checks if a key file is encrypted and returns a boolean value indicating the result.
-
-### 2.3 Request Body Preparation
-
-HTTPie's request body preparation is handled by the `prepare_request_body` function, defined in `httpie/uploads.py`. This function takes a request object and prepares the request body for transmission.
-
-*   The `prepare_request_body` function checks if the request body is a file or a string and prepares it accordingly.
-*   If the request body is a file, the function uses the `_prepare_file_for_upload` method to read the file contents and prepare the request body.
-*   If the request body is a string, the function uses the `as_bytes` method to convert the string to bytes and prepare the request body.
-
-### 2.4 Multipart Uploads
-
-HTTPie's multipart upload implementation is handled by the `get_multipart_data_and_content_type` function, defined in `httpie/uploads.py`. This function takes a request object and prepares the multipart data and content type for transmission.
-
-*   The `get_multipart_data_and_content_type` function checks if the request body is a multipart upload and prepares the data and content type accordingly.
-*   If the request body is a multipart upload, the function uses the `ChunkedMultipartUploadStream` class to prepare the data and content type.
-
-### 2.5 Downloading Files
-
-HTTPie's file download implementation is handled by the `Downloader` class, defined in `httpie/downloads.py`. This class provides a simple way to download files from a URL.
-
-*   The `Downloader` class takes a URL and a file path as input and downloads the file from the URL to the specified path.
-*   The class also provides a `DownloadStatus` object, which contains information about the download status, such as the total size and the number of bytes downloaded.
-
-### 2.6 HTTPie Certificate
-
-HTTPie's certificate implementation is handled by the `HTTPieCertificate` class, defined in `httpie/ssl_.py`. This class provides a simple way to load and verify certificates.
-
-*   The `HTTPieCertificate` class takes a certificate file path as input and loads the certificate from the file.
-*   The class also provides a `verify` method, which checks if the certificate is valid and returns a boolean value indicating the result.
-
-### 2.7 Network Protocols
-
-HTTPie supports multiple network protocols, including HTTP/1.1 and HTTP/2. The protocol implementation is handled by the `HTTPieHTTPAdapter` class, which provides a simple way to send requests over different protocols.
-
-*   The `HTTPieHTTPAdapter` class takes a protocol version as input and sends the request using the specified protocol.
-*   The class also provides a `build_response` method, which constructs an HTTP response object from the raw response data.
-
-### 2.8 Connection Pooling
-
-HTTPie uses connection pooling to improve performance and reduce the overhead of establishing new connections. The connection pooling implementation is handled by the `HTTPieHTTPAdapter` class.
-
-*   The `HTTPieHTTPAdapter` class uses a connection pool to manage connections to the server.
-*   The class also provides a `close` method, which closes the connection pool and releases any system resources associated with it.
-
-### 2.9 Request Retries
-
-HTTPie provides a request retry mechanism to handle failed requests. The request retry implementation is handled by the `HTTPieHTTPAdapter` class.
-
-*   The `HTTPieHTTPAdapter` class takes a retry count as input and retries the request if it fails.
-*   The class also provides a `send` method, which sends the request and retries it if necessary.
-
-### 2.10 Request Timeout
-
-HTTPie provides a request timeout mechanism to handle requests that take too long to complete. The request timeout implementation is handled by the `HTTPieHTTPAdapter` class.
-
-*   The `HTTPieHTTPAdapter` class takes a timeout value as input and raises a timeout exception if the request takes longer than the specified time.
-*   The class also provides a `send` method, which sends the request and raises a timeout exception if necessary.
+These modules and symbols work together to provide the core functionality of HTTPie, including building and sending requests, handling responses, and providing output options.
 
 
 <div class="page-break"></div>
 
-## 3. Data Processing and Formatting
+<h1 class='chapter-header'>Chapter 2: Input/Output Handling</h1>
 
-Chapter 3: Data Processing and Formatting
-==========================================
+## Overview
+The input/output handling is a critical component of the HTTPie tool. It is responsible for formatting and parsing data in various formats, including JSON and XML. The following sections provide a detailed overview of the input/output handling mechanisms.
 
-### 3.1 Data Processing Overview
+## Symbols
+The following table lists the symbols used in the input/output handling mechanisms.
 
-The data processing module is responsible for handling and transforming data between different formats, including JSON, XML, and HTTP headers. This module is implemented in `httpie/output/processing.py`.
+| Symbol | Description |
+| --- | --- |
+| `JSONFormatter` | Formats data in JSON format. |
+| `XMLFormatter` | Formats data in XML format. |
+| `EnhancedJsonLexer` | Lexes JSON data with enhanced capabilities. |
+| `SimplifiedHTTPLexer` | Lexes HTTP data in a simplified manner. |
+| `http_response_type` | Represents the type of HTTP response. |
+| `request_method` | Represents the HTTP request method. |
+| `parse_xml` | Parses XML data. |
+| `parse_declaration` | Parses XML declarations. |
+| `pretty_xml` | Pretty-prints XML data. |
 
-### 3.2 JSON Data Processing
+## Input Handling
+The input handling mechanism is responsible for reading data from various sources, including standard input, files, and network connections. The following table lists the input handling functions.
 
-JSON data processing is handled by the `JSONFormatter` class in `httpie/output/formatters/json.py`. This class provides methods for formatting JSON data, including:
+| Function | Description |
+| --- | --- |
+| `read_from_stdin` | Reads data from standard input. |
+| `read_from_file` | Reads data from a file. |
+| `read_from_network` | Reads data from a network connection. |
 
-*   `format_json`: Formats JSON data into a human-readable format.
-*   `format_json_body`: Formats the body of a JSON response.
+## Output Handling
+The output handling mechanism is responsible for writing data to various destinations, including standard output, files, and network connections. The following table lists the output handling functions.
 
-The `JSONFormatter` class uses the `EnhancedJsonLexer` class from `httpie/output/lexers/json.py` to lex the JSON data and provide syntax highlighting.
+| Function | Description |
+| --- | --- |
+| `write_to_stdout` | Writes data to standard output. |
+| `write_to_file` | Writes data to a file. |
+| `write_to_network` | Writes data to a network connection. |
 
-### 3.3 XML Data Processing
+## JSON Formatter
+The JSON formatter is responsible for formatting data in JSON format. The following table lists the JSON formatter functions.
 
-XML data processing is handled by the `XMLFormatter` class in `httpie/output/formatters/xml.py`. This class provides methods for formatting XML data, including:
+| Function | Description |
+| --- | --- |
+| `format_json` | Formats data in JSON format. |
+| `format_json_array` | Formats an array of data in JSON format. |
+| `format_json_object` | Formats an object in JSON format. |
 
-*   `parse_xml`: Parses XML data into a Python object.
-*   `pretty_xml`: Formats XML data into a human-readable format.
-*   `format_xml_body`: Formats the body of an XML response.
+## XML Formatter
+The XML formatter is responsible for formatting data in XML format. The following table lists the XML formatter functions.
 
-The `XMLFormatter` class uses the `parse_declaration` function to parse the XML declaration and the `parse_xml` function to parse the XML data.
+| Function | Description |
+| --- | --- |
+| `format_xml` | Formats data in XML format. |
+| `format_xml_array` | Formats an array of data in XML format. |
+| `format_xml_object` | Formats an object in XML format. |
 
-### 3.4 HTTP Header Data Processing
+## Lexers
+The lexers are responsible for breaking down data into individual tokens. The following table lists the lexer functions.
 
-HTTP header data processing is handled by the `HeadersFormatter` class in `httpie/output/formatters/headers.py`. This class provides methods for formatting HTTP headers, including:
-
-*   `format_headers`: Formats HTTP headers into a human-readable format.
-
-### 3.5 Data Conversion
-
-Data conversion between different formats is handled by the `Conversion` class in `httpie/output/processing.py`. This class provides methods for converting data between JSON, XML, and HTTP headers, including:
-
-*   `convert_json_to_xml`: Converts JSON data to XML.
-*   `convert_xml_to_json`: Converts XML data to JSON.
-*   `convert_headers_to_json`: Converts HTTP headers to JSON.
-
-### 3.6 Data Formatting
-
-Data formatting is handled by the `Formatting` class in `httpie/output/processing.py`. This class provides methods for formatting data into a human-readable format, including:
-
-*   `format_data`: Formats data into a human-readable format.
-*   `format_json`: Formats JSON data into a human-readable format.
-*   `format_xml`: Formats XML data into a human-readable format.
-*   `format_headers`: Formats HTTP headers into a human-readable format.
-
-### 3.7 MIME Type Validation
-
-MIME type validation is handled by the `is_valid_mime` function in `httpie/output/processing.py`. This function checks if a given MIME type is valid and returns a boolean value indicating whether the MIME type is valid or not.
-
-### 3.8 Implementation Details
-
-The data processing module is implemented using a combination of Python classes and functions. The `JSONFormatter`, `XMLFormatter`, and `HeadersFormatter` classes handle the formatting of JSON, XML, and HTTP headers, respectively. The `Conversion` class handles data conversion between different formats, and the `Formatting` class handles data formatting into a human-readable format. The `is_valid_mime` function handles MIME type validation.
-
-The data processing module uses a variety of dependencies, including `httpie/cli/nested_json/interpret.py`, `httpie/manager/core.py`, `httpie/manager/tasks/plugins.py`, `httpie/output/streams.py`, `httpie/output/ui/rich_progress.py`, `httpie/plugins/base.py`, `httpie/plugins/builtin.py`, `httpie/plugins/manager.py`, `httpie/plugins/registry.py`, and `httpie/plugins/__init__.py`.
-
-The data processing module is tested using a variety of test cases, including `tests/test_auth_plugins.py`, `tests/test_compress.py`, `tests/test_cookie_on_redirects.py`, `tests/test_plugins_cli.py`, `tests/test_redirects.py`, `tests/test_regressions.py`, `tests/test_stream.py`, and `tests/utils/plugins_cli.py`.
-
-### 3.9 Conclusion
-
-In conclusion, the data processing module is a critical component of the HTTPie tool, responsible for handling and transforming data between different formats. The module is implemented using a combination of Python classes and functions and uses a variety of dependencies to handle data conversion, formatting, and MIME type validation. The module is tested using a variety of test cases to ensure its correctness and reliability.
+| Function | Description |
+| --- | --- |
+| `lex_json` | Lexes JSON data. |
+| `lex_xml` | Lexes XML data. |
+| `lex_http` | Lexes HTTP data. |
 
 
 <div class="page-break"></div>
 
-## 4. Authentication and Authorization
+<h1 class='chapter-header'>Chapter 3: Command-Line Interface</h1>
 
-**Chapter 4: Authentication and Authorization**
+## Overview
+The Command-Line Interface (CLI) is the primary interface for interacting with HTTPie. It provides a powerful and flexible way to send HTTP requests and manipulate the output.
 
-### 4.1 Overview
+## Symbols
 
-HTTPie provides a robust authentication and authorization system, allowing users to authenticate with various methods, including Basic Auth, Digest Auth, and Bearer Auth. This chapter delves into the implementation details of the authentication and authorization mechanisms in HTTPie.
+### httpie/cli/argparser.py
 
-### 4.2 Authentication Plugins
+| Symbol | Description |
+| --- | --- |
+| HTTPieHelpFormatter | Custom help formatter for HTTPie |
+| BaseHTTPieArgumentParser | Base argument parser for HTTPie |
+| HTTPieManagerArgumentParser | Argument parser for HTTPie manager |
+| HTTPieArgumentParser | Argument parser for HTTPie |
 
-HTTPie uses a plugin-based architecture to handle authentication. The `httpie.plugins.base` module defines the base classes for authentication plugins, including `AuthPlugin`, `TransportPlugin`, `ConverterPlugin`, and `FormatterPlugin`. These classes provide a common interface for implementing different authentication mechanisms.
+### httpie/cli/dicts.py
 
-The `httpie.plugins.builtin` module contains built-in authentication plugins, including:
+| Symbol | Description |
+| --- | --- |
+| BaseMultiDict | Base class for multi-value dictionaries |
+| HTTPHeadersDict | Dictionary for HTTP headers |
+| RequestJSONDataDict | Dictionary for JSON request data |
+| MultiValueOrderedDict | Ordered dictionary for multi-value items |
+| RequestQueryParamsDict | Dictionary for request query parameters |
+| RequestDataDict | Dictionary for request data |
+| MultipartRequestDataDict | Dictionary for multipart request data |
+| RequestFilesDict | Dictionary for request files |
 
-* `BuiltinAuthPlugin`: A base class for built-in authentication plugins.
-* `HTTPBasicAuth`: Implements Basic Auth authentication.
-* `HTTPBearerAuth`: Implements Bearer Auth authentication.
-* `BasicAuthPlugin`: Implements Basic Auth authentication using a plugin.
-* `DigestAuthPlugin`: Implements Digest Auth authentication using a plugin.
-* `BearerAuthPlugin`: Implements Bearer Auth authentication using a plugin.
+### httpie/cli/exceptions.py
 
-### 4.3 Authentication Credentials
+| Symbol | Description |
+| --- | --- |
+| ParseError | Exception raised for parsing errors |
 
-HTTPie uses the `httpie.cli.argtypes` module to handle authentication credentials. The `AuthCredentials` class represents a pair of authentication credentials, including a username and password. The `AuthCredentialsArgType` class is used to parse authentication credentials from the command line.
+### httpie/cli/options.py
 
-### 4.4 Authentication Mechanisms
+| Symbol | Description |
+| --- | --- |
+| Qualifiers | Enum for qualifiers |
+| map_qualifiers | Function to map qualifiers to values |
+| drop_keys | Function to drop keys from a dictionary |
+| ParserSpec | Class for parser specifications |
+| Group | Class for groups |
+| Argument | Class for arguments |
+| to_argparse | Function to convert parser specification to argparse |
+| to_data | Function to convert parser specification to data |
+| parser_to_parser_spec | Function to convert parser to parser specification |
 
-HTTPie supports several authentication mechanisms, including:
+## Argument Parsing
 
-* Basic Auth: Implemented using the `HTTPBasicAuth` class.
-* Digest Auth: Implemented using the `DigestAuthPlugin` class.
-* Bearer Auth: Implemented using the `HTTPBearerAuth` class.
+Argument parsing is handled by the `HTTPieArgumentParser` class, which inherits from `BaseHTTPieArgumentParser`. The parser uses a custom help formatter, `HTTPieHelpFormatter`, to display help messages.
 
-### 4.5 Authorization
+### Argument Parser Structure
 
-HTTPie does not provide explicit authorization mechanisms. Instead, it relies on the authentication mechanisms to authorize requests. Once a user is authenticated, they are authorized to make requests to the server.
+The argument parser is structured as follows:
 
-### 4.6 Implementation Details
+*   `HTTPieArgumentParser`: The main argument parser for HTTPie.
+    *   `HTTPieManagerArgumentParser`: The argument parser for the HTTPie manager.
 
-The authentication and authorization mechanisms in HTTPie are implemented using a combination of plugin-based architecture and command-line argument parsing.
+### Argument Parser Options
 
-When a user runs HTTPie with authentication credentials, the `AuthCredentialsArgType` class parses the credentials from the command line. The `AuthPlugin` class then uses these credentials to authenticate the user with the server.
+The argument parser options are defined in `httpie/cli/options.py`. The options are grouped into the following categories:
 
-The `httpie.plugins.builtin` module contains the implementation details of the built-in authentication plugins. Each plugin class implements the `authenticate` method, which takes the authentication credentials as input and returns an authenticated session object.
+*   **Request options**: Options related to the HTTP request, such as `--method`, `--url`, `--headers`, etc.
+*   **Output options**: Options related to the output, such as `--output`, `--format`, etc.
+*   **Miscellaneous options**: Options that don't fit into the above categories, such as `--help`, `--version`, etc.
 
-The `httpie.cli.options` module defines the command-line options for authentication, including the `--auth` option. The `httpie.cli.argparser` module parses the command-line options and creates an instance of the `AuthCredentials` class.
+## Dictionary Classes
 
-### 4.7 Code Examples
+The dictionary classes are defined in `httpie/cli/dicts.py`. The classes are:
 
-The following code examples illustrate the implementation details of the authentication and authorization mechanisms in HTTPie:
+*   `BaseMultiDict`: The base class for multi-value dictionaries.
+*   `HTTPHeadersDict`: A dictionary for HTTP headers.
+*   `RequestJSONDataDict`: A dictionary for JSON request data.
+*   `MultiValueOrderedDict`: An ordered dictionary for multi-value items.
+*   `RequestQueryParamsDict`: A dictionary for request query parameters.
+*   `RequestDataDict`: A dictionary for request data.
+*   `MultipartRequestDataDict`: A dictionary for multipart request data.
+*   `RequestFilesDict`: A dictionary for request files.
 
-```python
-# httpie/plugins/base.py
-class AuthPlugin:
-    def authenticate(self, credentials):
-        # Implement authentication logic here
-        pass
+## Exceptions
 
-# httpie/plugins/builtin.py
-class HTTPBasicAuth(AuthPlugin):
-    def authenticate(self, credentials):
-        # Implement Basic Auth authentication logic here
-        pass
+The exceptions are defined in `httpie/cli/exceptions.py`. The exceptions are:
 
-# httpie/cli/argtypes.py
-class AuthCredentials:
-    def __init__(self, username, password):
-        self.username = username
-        self.password = password
+*   `ParseError`: An exception raised for parsing errors.
 
-class AuthCredentialsArgType:
-    def __call__(self, value):
-        # Parse authentication credentials from the command line
-        pass
+## Options
 
-# httpie/cli/options.py
-class ParserSpec:
-    def __init__(self):
-        self.options = [
-            # Define command-line options for authentication
-            Argument('--auth', type=AuthCredentialsArgType()),
-        ]
+The options are defined in `httpie/cli/options.py`. The options are:
 
-# httpie/cli/argparser.py
-def parse_args(args):
-    # Parse command-line options and create an instance of the AuthCredentials class
-    pass
-```
-
-### 4.8 Conclusion
-
-In conclusion, HTTPie provides a robust authentication and authorization system using a plugin-based architecture and command-line argument parsing. The implementation details of the authentication and authorization mechanisms are discussed in this chapter, including the use of authentication plugins, authentication credentials, and authorization mechanisms. The code examples provided illustrate the implementation details of the authentication and authorization mechanisms in HTTPie.
+*   `Qualifiers`: An enum for qualifiers.
+*   `map_qualifiers`: A function to map qualifiers to values.
+*   `drop_keys`: A function to drop keys from a dictionary.
+*   `ParserSpec`: A class for parser specifications.
+*   `Group`: A class for groups.
+*   `Argument`: A class for arguments.
+*   `to_argparse`: A function to convert parser specification to argparse.
+*   `to_data`: A function to convert parser specification to data.
+*   `parser_to_parser_spec`: A function to convert parser to parser specification.
 
 
 <div class="page-break"></div>
 
-## 5. Configuration and Settings
+<h1 class='chapter-header'>Chapter 4: Plugin Management</h1>
 
-**Chapter 5: Configuration and Settings**
+## Overview
 
-### 5.1 Configuration File
+Plugin management is a crucial aspect of the HTTPie framework, allowing users to extend and customize its functionality. This chapter delves into the technical details of plugin management, including the base plugin class, plugin types, and plugin management mechanisms.
 
-The configuration file is stored in the default configuration directory, which can be obtained using the `get_default_config_dir` function from `httpie/config.py`. The configuration file is a JSON file that stores the user's preferences and settings.
+### Plugin Base Class
 
-#### 5.1.1 Configuration File Structure
+The `BasePlugin` class, defined in `httpie/plugins/base.py`, serves as the foundation for all plugins. It provides a common interface for plugins to interact with the HTTPie framework.
 
-The configuration file has the following structure:
-```json
-{
-    "default_options": {
-        "output": "json",
-        "indent": 4,
-        "sort_keys": true
-    },
-    "sessions": {
-        "default": {
-            "headers": {
-                "User-Agent": "HTTPie/3.2.1"
-            },
-            "cookies": {
-                "session_id": "abc123"
-            }
-        }
-    }
-}
-```
-#### 5.1.2 Reading and Writing the Configuration File
+#### Symbols
 
-The `read_raw_config` function from `httpie/config.py` reads the configuration file and returns a dictionary containing the configuration data. The `BaseConfigDict` class from `httpie/config.py` provides a dictionary-like interface for accessing and modifying the configuration data.
+| Symbol | Description |
+| --- | --- |
+| `BasePlugin` | The base class for all plugins. |
+| `AuthPlugin` | A plugin that handles authentication. |
+| `TransportPlugin` | A plugin that handles transportation. |
+| `ConverterPlugin` | A plugin that handles data conversion. |
+| `FormatterPlugin` | A plugin that handles data formatting. |
 
-### 5.2 Configuration Options
+### Plugin Types
 
-The following configuration options are available:
+HTTPie supports various plugin types, each serving a specific purpose. The following plugin types are defined in `httpie/plugins/builtin.py`:
 
-* `output`: The output format, which can be one of `json`, `xml`, or `text`.
-* `indent`: The indentation level for JSON output.
-* `sort_keys`: A boolean indicating whether to sort keys in JSON output.
-* `headers`: A dictionary of default headers to include in requests.
-* `cookies`: A dictionary of default cookies to include in requests.
+#### Symbols
 
-### 5.3 Session Configuration
+| Symbol | Description |
+| --- | --- |
+| `BuiltinAuthPlugin` | A built-in authentication plugin. |
+| `HTTPBasicAuth` | A plugin that handles HTTP basic authentication. |
+| `HTTPBearerAuth` | A plugin that handles HTTP bearer authentication. |
+| `BasicAuthPlugin` | A plugin that handles basic authentication. |
+| `DigestAuthPlugin` | A plugin that handles digest authentication. |
+| `BearerAuthPlugin` | A plugin that handles bearer authentication. |
 
-Session configuration is stored in the `sessions` section of the configuration file. Each session has a unique name and can have its own set of headers and cookies.
+### Plugin Management
 
-#### 5.3.1 Session Upgrades
+Plugin management is handled by the `PluginManager` class, defined in `httpie/plugins/manager.py`. This class is responsible for loading, enabling, and managing plugins.
 
-The `upgrade_session` function from `httpie/manager/tasks/sessions.py` upgrades a session to the latest format. The `cli_upgrade_session` function from `httpie/manager/tasks/sessions.py` upgrades a session from the command line.
+#### Symbols
 
-### 5.4 Configuration Errors
+| Symbol | Description |
+| --- | --- |
+| `_load_directories` | A function that loads plugins from directories. |
+| `enable_plugins` | A function that enables plugins. |
+| `PluginManager` | The plugin manager class. |
 
-The `ConfigFileError` exception from `httpie/config.py` is raised when there is an error reading or writing the configuration file.
+### Plugin Registry
 
-### 5.5 Compatibility
+The plugin registry, defined in `httpie/plugins/registry.py`, is responsible for maintaining a list of available plugins.
 
-The `httpie/compat.py` module provides compatibility functions for different Python versions.
+#### Dependencies
 
-### 5.6 Encoding
+The plugin registry depends on the following modules:
 
-The `httpie/encoding.py` module provides functions for encoding and decoding data.
-
-### 5.7 JSON Parsing
-
-The `httpie/cli/nested_json` module provides functions for parsing and generating JSON data.
-
-### 5.8 Configuration Directory
-
-The `get_default_config_dir` function from `httpie/config.py` returns the default configuration directory.
-
-### 5.9 Dependencies
-
-The configuration module depends on the following modules:
-
-* `httpie/context.py`
-* `httpie/status.py`
-* `httpie/cli/argparser.py`
-* `httpie/cli/nested_json/errors.py`
-* `httpie/cli/nested_json/interpret.py`
-* `httpie/cli/nested_json/parse.py`
-* `httpie/cli/nested_json/tokens.py`
-* `httpie/cli/nested_json/__init__.py`
+* `httpie/manager/cli.py`
 * `httpie/manager/compat.py`
+* `httpie/manager/core.py`
+* `httpie/manager/__init__.py`
+* `httpie/manager/__main__.py`
+* `httpie/manager/tasks/check_updates.py`
+* `httpie/manager/tasks/export_args.py`
+* `httpie/manager/tasks/plugins.py`
+* `httpie/manager/tasks/sessions.py`
+* `httpie/manager/tasks/__init__.py`
+* `httpie/output/formatters/colors.py`
+* `httpie/output/formatters/headers.py`
 * `httpie/output/formatters/json.py`
-* `httpie/output/lexers/json.py`
-* `tests/test_encoding.py`
-* `tests/test_json.py`
-* `tests/fixtures/test.json`
-* `tests/fixtures/test_with_dupe_keys.json`
-* `docs/config.json`
-* `docs/contributors/people.json`
-* `docs/packaging/linux-centos/README.md`
+* `httpie/output/formatters/xml.py`
+* `httpie/plugins/builtin.py`
+* `httpie/plugins/manager.py`
 
-### 5.10 Symbols
+### Plugin Loading
 
-The configuration module exports the following symbols:
+Plugins can be loaded from directories using the `_load_directories` function. This function is responsible for loading plugins from the following directories:
 
-* `get_default_config_dir`
-* `ConfigFileError`
-* `read_raw_config`
-* `BaseConfigDict`
-* `Config`
+* `httpie/plugins/`
+* `httpie/manager/plugins/`
 
-### 5.11 Internal Functions
+### Plugin Enabling
 
-The configuration module uses the following internal functions:
+Plugins can be enabled using the `enable_plugins` function. This function is responsible for enabling plugins based on the following conditions:
 
-* `_check_status`
-* `_parse_options`
-* `is_daemon_mode`
-* `run_daemon_task`
-* `cli_check_updates`
-* `cli_export_args`
-* `cli_sessions`
-* `upgrade_session`
-* `cli_upgrade_session`
-* `cli_upgrade_all_sessions`
+* The plugin is loaded.
+* The plugin is enabled.
 
+### Plugin Management Mechanisms
 
-<div class="page-break"></div>
+The plugin management mechanism is responsible for managing plugins. This mechanism includes the following components:
 
-## 6. Testing and Development
+* Plugin loading.
+* Plugin enabling.
+* Plugin registry.
 
-**Chapter 6: Testing and Development**
+### Plugin Dependencies
 
-### 6.1 Testing Framework
+Plugins can depend on other plugins or modules. The following plugins have dependencies:
 
-The testing framework used is Pytest, a popular testing framework for Python. The tests are organized into separate files, each containing a set of related tests.
+* `httpie/plugins/registry.py`: depends on `httpie/manager/cli.py`, `httpie/manager/compat.py`, `httpie/manager/core.py`, `httpie/manager/__init__.py`, `httpie/manager/__main__.py`, `httpie/manager/tasks/check_updates.py`, `httpie/manager/tasks/export_args.py`, `httpie/manager/tasks/plugins.py`, `httpie/manager/tasks/sessions.py`, `httpie/manager/tasks/__init__.py`, `httpie/output/formatters/colors.py`, `httpie/output/formatters/headers.py`, `httpie/output/formatters/json.py`, `httpie/output/formatters/xml.py`, `httpie/plugins/builtin.py`, `httpie/plugins/manager.py`.
+* `httpie/plugins/builtin.py`: depends on `httpie/plugins/base.py`.
 
-### 6.2 Test Structure
+### Plugin In-Degree and Out-Degree
 
-Each test file contains a set of test functions, which are prefixed with the `test_` keyword. These functions contain the test logic and assertions.
+Plugins have in-degree and out-degree values, which represent the number of plugins that depend on them and the number of plugins they depend on, respectively. The following plugins have in-degree and out-degree values:
 
-### 6.3 Test Fixtures
-
-Test fixtures are used to set up and tear down resources needed for testing. In this implementation, fixtures are used to create temporary files and directories, as well as to start and stop HTTP servers.
-
-### 6.4 Test Dependencies
-
-The tests have dependencies on various modules and packages, including:
-
-* `httpie`: The main package being tested.
-* `pytest`: The testing framework.
-* `tests/utils`: A module containing utility functions for testing.
-* `tests/fixtures`: A module containing fixtures for testing.
-
-### 6.5 Test Implementation
-
-The tests are implemented using a combination of Pytest's built-in assertions and custom assertions. The tests cover a range of scenarios, including:
-
-* Command-line interface (CLI) tests: These tests verify the behavior of the CLI, including parsing of arguments and options.
-* HTTP request and response tests: These tests verify the behavior of the HTTP client, including sending requests and parsing responses.
-* JSON and XML parsing tests: These tests verify the behavior of the JSON and XML parsers.
-* Error handling tests: These tests verify the behavior of the error handling mechanisms.
-
-### 6.6 Test Coverage
-
-The tests aim to cover all aspects of the implementation, including:
-
-* CLI argument and option parsing
-* HTTP request and response handling
-* JSON and XML parsing
-* Error handling
-
-### 6.7 Development Guidelines
-
-To contribute to the development of this project, follow these guidelines:
-
-* Write tests for all new functionality
-* Use Pytest as the testing framework
-* Follow the existing coding style and conventions
-* Use fixtures to set up and tear down resources needed for testing
-* Use custom assertions to verify the behavior of the implementation
-
-### 6.8 Code Review
-
-All code changes must undergo a code review before being merged into the main branch. The code review should verify that:
-
-* The code is well-organized and follows the existing coding style and conventions
-* The code is well-tested and has adequate test coverage
-* The code is free of bugs and errors
-
-### 6.9 Continuous Integration
-
-The project uses continuous integration (CI) to automate the testing and build process. The CI pipeline runs the tests and builds the project on every commit, ensuring that the project is always in a releasable state.
-
-### 6.10 Release Process
-
-The release process involves the following steps:
-
-* Update the version number in the `__init__.py` file
-* Run the tests and build the project using the CI pipeline
-* Create a release tag and push it to the repository
-* Create a release package and upload it to the package repository
-
-By following these guidelines and processes, we can ensure that the project is well-tested, well-maintained, and always in a releasable state.
+* `httpie/plugins/registry.py`: in-degree 36, out-degree 16.
+* `httpie/plugins/builtin.py`: in-degree 21, out-degree 1.
+* `httpie/plugins/manager.py`: in-degree 22, out-degree 18.
+* `httpie/plugins/base.py`: in-degree 22, out-degree 0.
 
 
 <div class="page-break"></div>
 
-## Appendix: Module Dependency Graph
+<h1 class='chapter-header'>Chapter 5: Session and Cookie Management</h1>
+
+## Overview
+
+This chapter describes the session and cookie management in HTTPie.
+
+### Session Management
+
+HTTPie uses a concept of sessions to store and manage cookies, headers, and other settings across multiple requests. A session is a collection of settings that can be used to make requests to a specific host.
+
+### Cookie Management
+
+Cookies are small pieces of data that are sent by a server to a client and stored on the client's device. They are used to identify the client and store information about the client's interactions with the server.
+
+## Symbols
+
+The following symbols are used in this chapter:
+
+| Symbol | Description |
+| --- | --- |
+| `HTTPieCookiePolicy` | The cookie policy used by HTTPie. |
+| `is_anonymous_session` | A function that checks if a session is anonymous. |
+| `session_hostname_to_dirname` | A function that converts a hostname to a directory name. |
+| `strip_port` | A function that removes the port from a hostname. |
+| `materialize_cookie` | A function that materializes a cookie from a dictionary. |
+| `materialize_cookies` | A function that materializes a list of cookies from a dictionary. |
+| `materialize_headers` | A function that materializes a list of headers from a dictionary. |
+| `get_httpie_session` | A function that gets an HTTPie session. |
+| `Session` | A class that represents an HTTPie session. |
+
+## Session and Cookie Management Functions
+
+The following functions are used to manage sessions and cookies:
+
+| Function | Description |
+| --- | --- |
+| `get_httpie_session` | Gets an HTTPie session. |
+| `is_anonymous_session` | Checks if a session is anonymous. |
+| `session_hostname_to_dirname` | Converts a hostname to a directory name. |
+| `strip_port` | Removes the port from a hostname. |
+| `materialize_cookie` | Materializes a cookie from a dictionary. |
+| `materialize_cookies` | Materializes a list of cookies from a dictionary. |
+| `materialize_headers` | Materializes a list of headers from a dictionary. |
+
+## Session and Cookie Management Classes
+
+The following classes are used to manage sessions and cookies:
+
+| Class | Description |
+| --- | --- |
+| `Session` | Represents an HTTPie session. |
+| `HTTPieCookiePolicy` | Represents the cookie policy used by HTTPie. |
+
+## Cookie Policy
+
+The cookie policy used by HTTPie is represented by the `HTTPieCookiePolicy` class. This class defines the rules for accepting and rejecting cookies.
+
+## Session Management
+
+Sessions are managed using the `Session` class. This class provides methods for getting and setting session settings, such as cookies and headers.
+
+## Cookie Management
+
+Cookies are managed using the `materialize_cookie`, `materialize_cookies`, and `materialize_headers` functions. These functions materialize cookies and headers from dictionaries.
+
+## Example Usage
+
+The following example shows how to use the `Session` class to manage a session:
+```python
+from httpie import Session
+
+# Create a new session
+session = Session()
+
+# Set a cookie
+session.cookies['foo'] = 'bar'
+
+# Set a header
+session.headers['X-Foo'] = 'Bar'
+
+# Make a request using the session
+response = session.get('https://example.com')
+```
+This example creates a new session, sets a cookie and a header, and makes a request using the session.
+
+
+<div class="page-break"></div>
+
+<h1 class='chapter-header'>Chapter 6: Testing Framework</h1>
+
+## Overview
+The testing framework for HTTPie consists of several components, including test fixtures, test utilities, and test cases. The framework is designed to ensure that HTTPie is thoroughly tested and validated to work correctly in various scenarios.
+
+## Test Fixtures
+The test fixtures are located in the `tests/fixtures` directory and include various files and directories used to test HTTPie's functionality. The fixtures include:
+
+| Fixture | Description |
+| --- | --- |
+| `test.bin` | A binary file used to test HTTPie's handling of binary data |
+| `test.json` | A JSON file used to test HTTPie's handling of JSON data |
+| `test.txt` | A text file used to test HTTPie's handling of text data |
+| `test_with_dupe_keys.json` | A JSON file with duplicate keys used to test HTTPie's handling of JSON data with duplicate keys |
+| `session_data` | A directory containing session data used to test HTTPie's session management |
+| `xmldata` | A directory containing XML data used to test HTTPie's handling of XML data |
+
+## Test Utilities
+The test utilities are located in the `tests/utils` directory and include various functions and classes used to test HTTPie's functionality. The utilities include:
+
+| Utility | Description |
+| --- | --- |
+| `http_server.py` | A Python script that sets up an HTTP server used to test HTTPie's functionality |
+| `plugins_cli.py` | A Python script that tests HTTPie's plugin functionality |
+| `matching` | A directory containing utilities used to test HTTPie's matching functionality |
+
+### `http_server.py` Symbols
+
+| Symbol | Description |
+| --- | --- |
+| `TestHandler` | A class that handles HTTP requests and responses |
+| `get_headers` | A function that returns the headers of an HTTP request |
+| `chunked_drip` | A function that simulates a chunked HTTP response |
+| `random_encoding` | A function that generates a random encoding for an HTTP response |
+| `status_custom_msg` | A function that returns a custom status message for an HTTP response |
+| `get_cookies` | A function that returns the cookies of an HTTP request |
+| `set_cookies` | A function that sets the cookies of an HTTP response |
+| `set_cookie_and_redirect` | A function that sets a cookie and redirects the HTTP response |
+| `_http_server` | A function that sets up an HTTP server |
+| `http_server` | A function that sets up an HTTP server |
+| `localhost_http_server` | A function that sets up an HTTP server on localhost |
+
+### `matching/parsing.py` Symbols
+
+| Symbol | Description |
+| --- | --- |
+| `make_headers_re` | A function that creates a regular expression for matching HTTP headers |
+| `OutputMatchingError` | A class that represents an error in matching HTTP output |
+| `expect_tokens` | A function that expects a list of tokens in an HTTP response |
+| `expect_token` | A function that expects a single token in an HTTP response |
+| `expect_regex` | A function that expects a regular expression to match an HTTP response |
+| `expect_body` | A function that expects a specific body in an HTTP response |
+
+## Test Cases
+The test cases are located in the `tests` directory and include various test files used to test HTTPie's functionality. The test cases include:
+
+| Test Case | Description |
+| --- | --- |
+| `test_httpie.py` | A test file that tests HTTPie's functionality |
+| `test_httpie_cli.py` | A test file that tests HTTPie's command-line interface |
+| `test_json.py` | A test file that tests HTTPie's handling of JSON data |
+| `test_compress.py` | A test file that tests HTTPie's handling of compressed data |
+| `test_cookie_on_redirects.py` | A test file that tests HTTPie's handling of cookies on redirects |
+| `test_redirects.py` | A test file that tests HTTPie's handling of redirects |
+| `test_regressions.py` | A test file that tests HTTPie's regressions |
+| `test_stream.py` | A test file that tests HTTPie's handling of streaming data |
+| `test_tokens.py` | A test file that tests HTTPie's handling of tokens |
+
+
+<div class="page-break"></div>
+
+<h1 class='chapter-header'>Chapter 7: Documentation and Packaging</h1>
+
+## Overview
+
+This chapter provides an overview of the documentation and packaging process for the HTTPie project. It includes information on generating documentation, building packages, and packaging for various platforms.
+
+### Generating Documentation
+
+The `generate.py` script in the `docs/installation` directory is responsible for generating the documentation for HTTPie. The script uses the `jinja2` templating engine to generate the documentation from templates.
+
+#### Symbols
+
+| Symbol | Description |
+| --- | --- |
+| `generate_documentation` | Generates the documentation for HTTPie. |
+| `save_doc_file` | Saves the generated documentation to a file. |
+| `build_docs_structure` | Builds the directory structure for the documentation. |
+| `clean_template_output` | Cleans up the output of the template engine. |
+| `load_database` | Loads the database of documentation templates. |
+| `load_doc_file` | Loads a documentation file from disk. |
+| `main` | The main entry point of the `generate.py` script. |
+
+### Building Packages
+
+The `build.py` script in the `extras/packaging/linux` directory is responsible for building packages for HTTPie. The script uses various tools such as `snapcraft` and `brew` to build packages for different platforms.
+
+#### Symbols
+
+| Symbol | Description |
+| --- | --- |
+| `build_binaries` | Builds the binaries for HTTPie. |
+| `build_packages` | Builds the packages for HTTPie. |
+| `main` | The main entry point of the `build.py` script. |
+
+### Packaging for Various Platforms
+
+HTTPie is packaged for various platforms, including Linux, macOS, and Windows. The packaging process involves creating packages in various formats, such as `.deb`, `.rpm`, and `.exe`.
+
+#### Linux Packaging
+
+The `httpie.spec.txt` file in the `docs/packaging/linux-fedora` directory contains the specification for building the HTTPie package on Linux.
+
+#### macOS Packaging
+
+The `httpie.rb` file in the `docs/packaging/brew` directory contains the specification for building the HTTPie package on macOS using Homebrew.
+
+#### Windows Packaging
+
+The `httpie.nuspec` file in the `docs/packaging/windows-chocolatey` directory contains the specification for building the HTTPie package on Windows using Chocolatey.
+
+### Dependencies
+
+The following dependencies are required for building and packaging HTTPie:
+
+* `jinja2` for generating documentation
+* `snapcraft` for building Linux packages
+* `brew` for building macOS packages
+* `chocolatey` for building Windows packages
+
+### In-Degree and Out-Degree
+
+The following tables show the in-degree and out-degree of the various files and directories in the HTTPie project:
+
+| File/Directory | In-Degree | Out-Degree |
+| --- | --- | --- |
+| `generate.py` | 5 | 75 |
+| `build.py` | 0 | 90 |
+| `httpie.rb` | 25 | 0 |
+| `httpie.spec.txt` | 0 | 0 |
+| `httpie.nuspec` | 0 | 0 |
+
+Note: The in-degree and out-degree values are based on the provided context and may not be accurate.
+
+
+<div class="page-break"></div>
+
+<h1 class='chapter-header'>Appendix: System Topology</h1>
 
 ```mermaid
 graph TD
-  httpie_cli_utils_py --> httpie_cli_argparser_py
-  tests_test_httpie_cli_py --> tests_utils_matching_tokens_py
-  tests_test_httpie_cli_py --> tests_utils_matching___init___py
-  tests_utils_matching___init___py --> tests_utils_matching_tokens_py
-  tests_utils_matching___init___py --> httpie_cli_nested_json_tokens_py
-  httpie_cli_nested_json_errors_py --> tests_utils_matching_tokens_py
-  httpie_cli_nested_json_errors_py --> httpie_cli_nested_json_tokens_py
-  httpie_cli_nested_json_interpret_py --> tests_utils_matching_tokens_py
-  httpie_cli_nested_json_interpret_py --> httpie_cli_nested_json_errors_py
-  httpie_cli_nested_json_parse_py --> tests_utils_matching_tokens_py
-  httpie_cli_nested_json_parse_py --> httpie_cli_nested_json_errors_py
-  httpie_cli_nested_json___init___py --> tests_utils_matching_tokens_py
-  httpie_cli_nested_json___init___py --> httpie_cli_nested_json_errors_py
-  httpie_internal_daemons_py --> docs_packaging_linux_centos_README_md
-  httpie_internal_daemons_py --> httpie_compat_py
-  httpie_internal_daemon_runner_py --> httpie_internal_update_warnings_py
-  httpie_internal_daemon_runner_py --> httpie_context_py
-  httpie_internal_update_warnings_py --> httpie_cli_utils_py
-  httpie_internal_update_warnings_py --> tests_test_httpie_cli_py
-  httpie_legacy_v3_1_0_session_cookie_format_py --> httpie_sessions_py
-  httpie_legacy_v3_1_0_session_cookie_format_py --> httpie_cli_argparser_py
-  httpie_legacy_v3_2_0_session_header_format_py --> httpie_sessions_py
-  httpie_manager_cli_py --> httpie_cli_utils_py
-  httpie_manager_cli_py --> tests_test_httpie_cli_py
-  httpie_manager_compat_py --> httpie_compat_py
-  httpie_manager_core_py --> httpie_manager_cli_py
-  httpie_manager_core_py --> httpie_manager_tasks_check_updates_py
-  httpie_manager___main___py --> httpie_manager_cli_py
-  httpie_manager___main___py --> httpie_manager_core_py
-  httpie_manager_tasks_check_updates_py --> httpie_internal_update_warnings_py
-  httpie_manager_tasks_check_updates_py --> httpie_context_py
-  httpie_manager_tasks_export_args_py --> httpie_cli_nested_json_errors_py
-  httpie_manager_tasks_export_args_py --> httpie_cli_nested_json_interpret_py
-  httpie_manager_tasks_plugins_py --> httpie_cli_nested_json_interpret_py
-  httpie_manager_tasks_plugins_py --> httpie_manager_cli_py
-  httpie_manager_tasks_sessions_py --> httpie_legacy_v3_1_0_session_cookie_format_py
-  httpie_manager_tasks_sessions_py --> httpie_legacy_v3_2_0_session_header_format_py
-  httpie_manager_tasks___init___py --> httpie_manager_tasks_check_updates_py
-  httpie_manager_tasks___init___py --> httpie_manager_tasks_export_args_py
-  httpie_output_models_py --> httpie_output_formatters_colors_py
-  httpie_output_models_py --> httpie_context_py
-  httpie_output_processing_py --> httpie_cli_nested_json_interpret_py
-  httpie_output_processing_py --> httpie_manager_core_py
-  httpie_output_streams_py --> httpie_cli_utils_py
-  httpie_output_streams_py --> tests_utils_matching_tokens_py
-  httpie_output_utils_py --> httpie_cli_utils_py
-  httpie_output_utils_py --> tests_utils_matching_tokens_py
-  httpie_output_writer_py --> httpie_cli_utils_py
-  httpie_output_writer_py --> tests_utils_matching_tokens_py
-  httpie_output_formatters_colors_py --> httpie_cli_nested_json_errors_py
-  httpie_output_formatters_colors_py --> httpie_cli_nested_json_interpret_py
-  httpie_output_formatters_headers_py --> httpie_manager_tasks_plugins_py
-  httpie_output_formatters_headers_py --> httpie_plugins_base_py
-  httpie_output_formatters_json_py --> httpie_cli_utils_py
-  httpie_output_formatters_json_py --> tests_utils_matching_tokens_py
-  httpie_output_formatters_xml_py --> httpie_manager_tasks_plugins_py
-  httpie_output_formatters_xml_py --> httpie_plugins_base_py
-  httpie_output_lexers_http_py --> httpie_cli_nested_json_interpret_py
-  httpie_output_lexers_http_py --> httpie_manager_core_py
-  httpie_output_lexers_json_py --> httpie_cli_nested_json_interpret_py
-  httpie_output_lexers_json_py --> httpie_manager_core_py
-  httpie_output_lexers_metadata_py --> httpie_output_lexers_common_py
-  httpie_output_lexers_metadata_py --> httpie_models_py
-  httpie_output_ui_man_pages_py --> docs_packaging_linux_centos_README_md
-  httpie_output_ui_man_pages_py --> httpie_context_py
-  httpie_output_ui_rich_help_py --> httpie_cli_nested_json_interpret_py
-  httpie_output_ui_rich_help_py --> httpie_manager_core_py
-  httpie_output_ui_rich_palette_py --> httpie_output_ui_palette_py
-  httpie_output_ui_rich_progress_py --> httpie_output_ui_rich_help_py
-  httpie_output_ui_rich_progress_py --> httpie_output_ui_rich_palette_py
-  httpie_output_ui_rich_utils_py --> httpie_output_ui_rich_palette_py
-  httpie_output_ui_rich_utils_py --> docs_packaging_linux_centos_README_md
-  httpie_plugins_builtin_py --> httpie_plugins_base_py
-  httpie_plugins_manager_py --> httpie_cli_utils_py
-  httpie_plugins_manager_py --> tests_utils_matching_tokens_py
-  httpie_plugins_registry_py --> httpie_manager_cli_py
-  httpie_plugins_registry_py --> httpie_manager_compat_py
-  httpie_plugins___init___py --> httpie_plugins_base_py
-  tests_conftest_py --> httpie_cli_utils_py
-  tests_conftest_py --> tests_utils_matching_tokens_py
-  tests_test_auth_py --> httpie_cli_utils_py
-  tests_test_auth_py --> tests_utils_matching_tokens_py
-  tests_test_auth_plugins_py --> httpie_cli_utils_py
-  tests_test_auth_plugins_py --> tests_utils_matching_tokens_py
-  tests_test_binary_py --> httpie_cli_utils_py
-  tests_test_binary_py --> tests_utils_matching_tokens_py
-  tests_test_cli_py --> httpie_cli_utils_py
-  tests_test_cli_py --> tests_utils_matching_tokens_py
-  tests_test_cli_ui_py --> tests_utils_matching_tokens_py
-  tests_test_cli_ui_py --> tests_utils_matching___init___py
-  tests_test_cli_utils_py --> httpie_cli_utils_py
-  tests_test_cli_utils_py --> pytest_ini
-  tests_test_compress_py --> httpie_cli_utils_py
-  tests_test_compress_py --> tests_utils_matching_tokens_py
-  tests_test_config_py --> httpie_cli_utils_py
-  tests_test_config_py --> tests_utils_matching_tokens_py
-  tests_test_cookie_py --> httpie_cli_utils_py
-  tests_test_cookie_py --> tests_utils_matching_tokens_py
-  tests_test_cookie_on_redirects_py --> httpie_cli_utils_py
-  tests_test_cookie_on_redirects_py --> tests_utils_matching_tokens_py
-  tests_test_defaults_py --> httpie_cli_utils_py
-  tests_test_defaults_py --> tests_utils_matching_tokens_py
-  tests_test_downloads_py --> httpie_cli_utils_py
-  tests_test_downloads_py --> tests_utils_matching_tokens_py
-  tests_test_encoding_py --> httpie_cli_utils_py
-  tests_test_encoding_py --> tests_utils_matching_tokens_py
-  tests_test_errors_py --> httpie_cli_utils_py
-  tests_test_errors_py --> tests_utils_matching_tokens_py
-  tests_test_exit_status_py --> httpie_cli_utils_py
-  tests_test_exit_status_py --> tests_utils_matching_tokens_py
-  tests_test_httpie_py --> httpie_cli_utils_py
-  tests_test_httpie_py --> tests_test_httpie_cli_py
-  tests_test_json_py --> httpie_cli_utils_py
-  tests_test_json_py --> tests_utils_matching_tokens_py
-  tests_test_meta_py --> httpie_cli_utils_py
-  tests_test_meta_py --> tests_utils_matching_tokens_py
-  tests_test_offline_py --> httpie_cli_utils_py
-  tests_test_offline_py --> tests_utils_matching_tokens_py
-  tests_test_output_py --> httpie_cli_utils_py
-  tests_test_output_py --> tests_utils_matching_tokens_py
-  tests_test_parser_schema_py --> httpie_cli_options_py
-  tests_test_plugins_cli_py --> tests_utils_plugins_cli_py
-  tests_test_plugins_cli_py --> pytest_ini
-  tests_test_redirects_py --> httpie_cli_utils_py
-  tests_test_redirects_py --> tests_utils_matching_tokens_py
-  tests_test_regressions_py --> httpie_cli_utils_py
-  tests_test_regressions_py --> tests_utils_matching_tokens_py
-  tests_test_sessions_py --> httpie_cli_utils_py
-  tests_test_sessions_py --> tests_utils_matching_tokens_py
-  tests_test_ssl_py --> httpie_cli_utils_py
-  tests_test_ssl_py --> tests_utils_matching_tokens_py
-  tests_test_stream_py --> httpie_cli_utils_py
-  tests_test_stream_py --> tests_utils_matching_tokens_py
-  tests_test_tokens_py --> httpie_cli_utils_py
-  tests_test_tokens_py --> tests_utils_matching_tokens_py
-  tests_test_transport_plugin_py --> httpie_cli_utils_py
-  tests_test_transport_plugin_py --> tests_utils_matching_tokens_py
-  tests_test_update_warnings_py --> httpie_cli_utils_py
-  tests_test_update_warnings_py --> tests_utils_matching_tokens_py
-  tests_test_uploads_py --> httpie_cli_utils_py
-  tests_test_uploads_py --> tests_utils_matching_tokens_py
-  tests_test_windows_py --> httpie_cli_utils_py
-  tests_test_windows_py --> tests_utils_matching_tokens_py
-  tests_test_xml_py --> httpie_cli_utils_py
-  tests_test_xml_py --> tests_utils_matching_tokens_py
-  tests_fixtures___init___py --> httpie_cli_utils_py
-  tests_fixtures___init___py --> tests_test_httpie_cli_py
-  tests_utils_http_server_py --> httpie_cli_utils_py
-  tests_utils_http_server_py --> tests_test_httpie_cli_py
-  tests_utils_plugins_cli_py --> tests_utils_matching_tokens_py
-  tests_utils_plugins_cli_py --> tests_utils_matching___init___py
-  tests_utils___init___py --> httpie_cli_nested_json_errors_py
-  tests_utils___init___py --> httpie_cli_nested_json_interpret_py
-  tests_utils_matching_parsing_py --> httpie_cli_utils_py
-  tests_utils_matching_parsing_py --> tests_utils_matching_tokens_py
-  tests_utils_matching_test_matching_py --> httpie_cli_utils_py
-  tests_utils_matching_test_matching_py --> tests_utils_matching_tokens_py
-  docs_contributors_fetch_py --> httpie_cli_nested_json_errors_py
-  docs_contributors_fetch_py --> httpie_cli_nested_json_interpret_py
-  docs_contributors_generate_py --> docs_contributors_fetch_py
-  docs_contributors_generate_py --> docs_contributors_snippet_jinja2
-  docs_installation_generate_py --> httpie_cli_nested_json_interpret_py
-  docs_installation_generate_py --> httpie_manager_core_py
-  extras_packaging_linux_build_py --> httpie_cli_utils_py
-  extras_packaging_linux_build_py --> tests_test_httpie_cli_py
-  extras_packaging_linux_scripts_httpie_cli_py --> httpie_manager___main___py
-  extras_packaging_linux_scripts_http_cli_py --> httpie___main___py
-  extras_profiling_benchmarks_py --> docs_packaging_linux_centos_README_md
-  extras_profiling_run_py --> httpie_cli_argparser_py
-  extras_scripts_generate_man_pages_py --> httpie_cli_utils_py
-  extras_scripts_generate_man_pages_py --> tests_test_httpie_cli_py
-  httpie_adapters_py --> httpie_cli_dicts_py
-  httpie_client_py --> httpie_cli_utils_py
-  httpie_client_py --> tests_utils_matching_tokens_py
-  httpie_compat_py --> httpie_cli_utils_py
-  httpie_compat_py --> tests_test_httpie_cli_py
-  httpie_config_py --> httpie_cli_nested_json_errors_py
-  httpie_config_py --> httpie_cli_nested_json_interpret_py
-  httpie_context_py --> httpie_cli_utils_py
-  httpie_context_py --> tests_utils_matching_tokens_py
-  httpie_cookies_py --> httpie_cli_utils_py
-  httpie_cookies_py --> tests_test_httpie_cli_py
-  httpie_core_py --> httpie_cli_utils_py
-  httpie_core_py --> tests_utils_matching_tokens_py
-  httpie_downloads_py --> httpie_cli_nested_json_interpret_py
-  httpie_downloads_py --> httpie_manager_core_py
-  httpie_models_py --> httpie_cli_utils_py
-  httpie_models_py --> tests_utils_matching_tokens_py
-  httpie_sessions_py --> httpie_cli_utils_py
-  httpie_sessions_py --> tests_utils_matching_tokens_py
-  httpie_ssl__py --> httpie_manager_compat_py
-  httpie_ssl__py --> tests_test_ssl_py
-  httpie_uploads_py --> httpie_manager_compat_py
-  httpie_uploads_py --> docs_packaging_linux_centos_README_md
-  httpie_utils_py --> httpie_cli_nested_json_errors_py
-  httpie_utils_py --> httpie_cli_nested_json_interpret_py
-  httpie___main___py --> httpie_core_py
-  httpie___main___py --> httpie_status_py
-  httpie_cli_argparser_py --> httpie_cli_utils_py
-  httpie_cli_argparser_py --> tests_utils_matching_tokens_py
-  httpie_cli_argtypes_py --> httpie_manager_tasks_sessions_py
-  httpie_cli_argtypes_py --> tests_test_sessions_py
-  httpie_cli_constants_py --> httpie_cli_nested_json_interpret_py
-  httpie_cli_constants_py --> httpie_manager_core_py
-  httpie_cli_definition_py --> httpie_cli_utils_py
-  httpie_cli_definition_py --> tests_test_httpie_cli_py
-  httpie_cli_options_py --> httpie_cli_utils_py
-  httpie_cli_options_py --> httpie_cli_argparser_py
-  httpie_cli_requestitems_py --> httpie_cli_utils_py
-  httpie_cli_requestitems_py --> tests_utils_matching_tokens_py
+  update_warnings_py -->|imports| config_json
+  update_warnings_py -->|imports| httpie-animation_gif
+  fetch_py -->|imports| _gitignore
+  fetch_py -->|imports| config_json
+  generate_py -->|imports| fetch_py
+  generate_py -->|imports| snippet_jinja2
+  generate_py -->|imports| _gitignore
+  generate_py -->|imports| _packit_yaml
+  build_py -->|imports| update_warnings_py
+  build_py -->|imports| httpie-animation_gif
+  httpie_cli_py -->|imports| __main___py
+  http_cli_py -->|imports| __main___py
+  benchmarks_py -->|imports| README_md
+  run_py -->|imports| argparser_py
+  generate_man_pages_py -->|imports| update_warnings_py
+  generate_man_pages_py -->|imports| _gitignore
+  adapters_py -->|imports| dicts_py
+  client_py -->|imports| config_json
+  client_py -->|imports| people_json
+  compat_py -->|imports| update_warnings_py
+  compat_py -->|imports| httpie-animation_gif
+  config_py -->|imports| config_json
+  config_py -->|imports| people_json
+  context_py -->|imports| update_warnings_py
+  context_py -->|imports| _editorconfig
+  cookies_py -->|imports| update_warnings_py
+  cookies_py -->|imports| httpie-animation_gif
+  core_py -->|imports| update_warnings_py
+  core_py -->|imports| README_md
+  downloads_py -->|imports| _gitignore
+  downloads_py -->|imports| httpie_rb
+  models_py -->|imports| compat_py
+  models_py -->|imports| utils_py
+  sessions_py -->|imports| _editorconfig
+  sessions_py -->|imports| _gitignore
+  ssl__py -->|imports| adapters_py
+  ssl__py -->|imports| compat_py
+  uploads_py -->|imports| README_md
+  uploads_py -->|imports| compat_py
+  utils_py -->|imports| _gitignore
+  utils_py -->|imports| config_json
+  __main___py -->|imports| core_py
+  __main___py -->|imports| status_py
+  argparser_py -->|imports| _gitignore
+  argparser_py -->|imports| httpie_rb
+  argtypes_py -->|imports| README_md
+  argtypes_py -->|imports| sessions_py
+  constants_py -->|imports| _gitignore
+  constants_py -->|imports| httpie_rb
+  definition_py -->|imports| update_warnings_py
+  definition_py -->|imports| httpie-animation_gif
+  options_py -->|imports| argparser_py
+  options_py -->|imports| utils_py
+  requestitems_py -->|imports| README_md
+  requestitems_py -->|imports| utils_py
+  utils_py -->|imports| argparser_py
+  errors_py -->|imports| tokens_py
+  errors_py -->|imports| test_tokens_py
+  interpret_py -->|imports| argparser_py
+  interpret_py -->|imports| errors_py
+  parse_py -->|imports| errors_py
+  parse_py -->|imports| tokens_py
+  __init___py -->|imports| errors_py
+  __init___py -->|imports| interpret_py
+  daemons_py -->|imports| README_md
+  daemons_py -->|imports| compat_py
+  daemon_runner_py -->|imports| update_warnings_py
+  daemon_runner_py -->|imports| context_py
+  v3_1_0_session_cookie_format_py -->|imports| sessions_py
+  v3_1_0_session_cookie_format_py -->|imports| argparser_py
+  v3_2_0_session_header_format_py -->|imports| sessions_py
+  cli_py -->|imports| update_warnings_py
+  cli_py -->|imports| httpie-animation_gif
+  compat_py -->|imports| compat_py
+  core_py -->|imports| context_py
+  core_py -->|imports| status_py
+  __main___py -->|imports| context_py
+  __main___py -->|imports| core_py
+  check_updates_py -->|imports| update_warnings_py
+  check_updates_py -->|imports| context_py
+  export_args_py -->|imports| config_json
+  export_args_py -->|imports| people_json
+  plugins_py -->|imports| _gitignore
+  plugins_py -->|imports| httpie_rb
+  sessions_py -->|imports| context_py
+  sessions_py -->|imports| sessions_py
+  __init___py -->|imports| check_updates_py
+  __init___py -->|imports| export_args_py
+  models_py -->|imports| context_py
+  models_py -->|imports| argparser_py
+  processing_py -->|imports| _gitignore
+  processing_py -->|imports| httpie_rb
+  streams_py -->|imports| context_py
+  streams_py -->|imports| encoding_py
+  utils_py -->|imports| _gitignore
+  utils_py -->|imports| config_json
+  writer_py -->|imports| context_py
+  writer_py -->|imports| models_py
+  colors_py -->|imports| config_json
+  colors_py -->|imports| people_json
+  headers_py -->|imports| plugins_py
+  headers_py -->|imports| base_py
+  json_py -->|imports| config_json
+  json_py -->|imports| people_json
+  xml_py -->|imports| encoding_py
+  xml_py -->|imports| plugins_py
+  http_py -->|imports| _gitignore
+  http_py -->|imports| httpie_rb
+  json_py -->|imports| _gitignore
+  json_py -->|imports| httpie_rb
+  metadata_py -->|imports| models_py
+  metadata_py -->|imports| common_py
+  man_pages_py -->|imports| README_md
+  man_pages_py -->|imports| context_py
+  rich_help_py -->|imports| _gitignore
+  rich_help_py -->|imports| httpie_rb
+  rich_palette_py -->|imports| palette_py
+  rich_progress_py -->|imports| context_py
+  rich_progress_py -->|imports| rich_help_py
+  rich_utils_py -->|imports| README_md
+  rich_utils_py -->|imports| rich_palette_py
+  builtin_py -->|imports| base_py
+  manager_py -->|imports| update_warnings_py
+  manager_py -->|imports| README_md
+  registry_py -->|imports| cli_py
+  registry_py -->|imports| compat_py
+  __init___py -->|imports| base_py
+  conftest_py -->|imports| pytest_ini
+  conftest_py -->|imports| utils_py
+  test_auth_py -->|imports| pytest_ini
+  test_auth_py -->|imports| status_py
+  test_auth_plugins_py -->|imports| utils_py
+  test_auth_plugins_py -->|imports| constants_py
+  test_binary_py -->|imports| utils_py
+  test_binary_py -->|imports| utils_py
+  test_cli_py -->|imports| pytest_ini
+  test_cli_py -->|imports| client_py
+  test_cli_ui_py -->|imports| pytest_ini
+  test_cli_ui_py -->|imports| README_md
+  test_cli_utils_py -->|imports| pytest_ini
+  test_cli_utils_py -->|imports| argparser_py
+  test_compress_py -->|imports| status_py
+  test_compress_py -->|imports| utils_py
+  test_config_py -->|imports| pytest_ini
+  test_config_py -->|imports| compat_py
+  test_cookie_py -->|imports| utils_py
+  test_cookie_py -->|imports| utils_py
+  test_cookie_on_redirects_py -->|imports| pytest_ini
+  test_cookie_on_redirects_py -->|imports| utils_py
+  test_defaults_py -->|imports| httpie-animation_gif
+  test_defaults_py -->|imports| generate_py
+  test_downloads_py -->|imports| pytest_ini
+  test_downloads_py -->|imports| README_md
+  test_encoding_py -->|imports| pytest_ini
+  test_encoding_py -->|imports| encoding_py
+  test_errors_py -->|imports| pytest_ini
+  test_errors_py -->|imports| status_py
+  test_exit_status_py -->|imports| status_py
+  test_exit_status_py -->|imports| utils_py
+  test_httpie_py -->|imports| update_warnings_py
+  test_httpie_py -->|imports| pytest_ini
+  test_httpie_cli_py -->|imports| pytest_ini
+  test_httpie_cli_py -->|imports| config_json
+  test_json_py -->|imports| pytest_ini
+  test_json_py -->|imports| config_json
+  test_meta_py -->|imports| pytest_ini
+  test_meta_py -->|imports| models_py
+  test_offline_py -->|imports| utils_py
+  test_offline_py -->|imports| utils_py
+  test_output_py -->|imports| update_warnings_py
+  test_output_py -->|imports| pytest_ini
+  test_parser_schema_py -->|imports| options_py
+  test_plugins_cli_py -->|imports| pytest_ini
+  test_plugins_cli_py -->|imports| status_py
+  test_redirects_py -->|imports| pytest_ini
+  test_redirects_py -->|imports| compat_py
+  test_regressions_py -->|imports| pytest_ini
+  test_regressions_py -->|imports| compat_py
+  test_sessions_py -->|imports| pytest_ini
+  test_sessions_py -->|imports| config_json
+  test_ssl_py -->|imports| pytest_ini
+  test_ssl_py -->|imports| ssl__py
+  test_stream_py -->|imports| pytest_ini
+  test_stream_py -->|imports| config_json
+  test_tokens_py -->|imports| utils_py
+  test_tokens_py -->|imports| utils_py
+  test_transport_plugin_py -->|imports| httpie-animation_gif
+  test_transport_plugin_py -->|imports| generate_py
+  test_update_warnings_py -->|imports| pytest_ini
+  test_update_warnings_py -->|imports| config_json
+  test_uploads_py -->|imports| pytest_ini
+  test_uploads_py -->|imports| config_json
+  test_windows_py -->|imports| pytest_ini
+  test_windows_py -->|imports| compat_py
+  test_xml_py -->|imports| pytest_ini
+  test_xml_py -->|imports| encoding_py
+  __init___py -->|imports| update_warnings_py
+  __init___py -->|imports| config_json
+  http_server_py -->|imports| update_warnings_py
+  http_server_py -->|imports| pytest_ini
+  plugins_cli_py -->|imports| pytest_ini
+  plugins_cli_py -->|imports| compat_py
+  __init___py -->|imports| update_warnings_py
+  __init___py -->|imports| _gitignore
+  parsing_py -->|imports| _gitignore
+  parsing_py -->|imports| httpie_rb
+  test_matching_py -->|imports| models_py
+  test_matching_py -->|imports| utils_py
+  __init___py -->|imports| pytest_ini
+  __init___py -->|imports| tokens_py
 ```

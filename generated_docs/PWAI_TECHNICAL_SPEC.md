@@ -20,41 +20,37 @@
 <h1 class='chapter-header'>Chapter 1: Project Orchestration</h1>
 
 ## Overview
-
-Project orchestration is a critical component of any software development endeavor, providing the structural framework that governs the interactions between various components of a project. In the context of the provided project structure, the `orchestrator.py` module serves as the central hub for project orchestration.
+Project orchestration is a critical component of any complex software system, ensuring seamless integration and execution of various tasks and workflows. In this chapter, we delve into the design and implementation of a project orchestrator, with a focus on the `orchestrator.py` module.
 
 ### Module Dependencies
+The `orchestrator.py` module has dependencies on `code_generation.py` and `code_testing.py`, highlighting its role in integrating code generation and testing workflows. The module's dependencies are summarized below:
 
-The `orchestrator.py` module exhibits a moderate level of interconnectedness, with an out-degree of 2 and an in-degree of 1. This implies that the module is dependent on two external modules (`code_generation.py` and `code_testing.py`), while also being a dependency for a single external module.
+| Module | Description |
+| --- | --- |
+| `code_generation.py` | Provides functionality for generating code templates and snippets. |
+| `code_testing.py` | Offers tools and utilities for testing and validating generated code. |
 
 ### Symbols
+The `orchestrator.py` module exports two key symbols, outlined in the following table:
 
-The following table outlines the symbols defined within the `orchestrator.py` module:
-
-| Symbol Name | Description |
+| Symbol | Description |
 | --- | --- |
-| `get_framework_blueprint` | Retrieves a blueprint for the project framework, providing a structural foundation for subsequent development. |
-| `orchestrate_multi_file` | Orchestrates the processing of multiple files, ensuring a cohesive and streamlined approach to project development. |
+| `get_framework_blueprint` | Retrieves a framework blueprint for code generation, based on a set of predefined parameters. |
+| `orchestrate_multi_file` | Orchestrates the generation and testing of multiple files, leveraging the `code_generation.py` and `code_testing.py` modules. |
 
-### Module Structure
+### Module Characteristics
+The `orchestrator.py` module exhibits the following characteristics:
 
-The `orchestrator.py` module is composed of a set of interrelated functions and variables that collectively facilitate project orchestration. The module's structure can be represented as follows:
-
-* `orchestrator.py`
-	+ `get_framework_blueprint`
-	+ `orchestrate_multi_file`
-	+ Dependencies:
-		- `code_generation.py`
-		- `code_testing.py`
+* **Out-degree**: 2, indicating that the module depends on two external modules (`code_generation.py` and `code_testing.py`).
+* **In-degree**: 1, suggesting that the module is imported by a single external module or script.
 
 ### Design Patterns
+The project orchestrator employs the following design patterns:
 
-The `orchestrator.py` module embodies several key design patterns that enable effective project orchestration:
+* **Facade Pattern**: The `orchestrator.py` module acts as a facade, providing a unified interface to the code generation and testing workflows.
+* **Mediator Pattern**: The `orchestrate_multi_file` function mediates the interactions between the code generation and testing modules, ensuring a seamless workflow.
 
-* **Facade Pattern**: The `get_framework_blueprint` function serves as a facade, providing a simplified interface for accessing the project framework.
-* **Mediator Pattern**: The `orchestrate_multi_file` function acts as a mediator, coordinating the interactions between multiple files and ensuring a cohesive approach to project development.
-
-By leveraging these design patterns, the `orchestrator.py` module provides a robust and maintainable framework for project orchestration.
+By leveraging these design patterns and carefully managing dependencies, the project orchestrator enables efficient and scalable project execution.
 
 
 <div class="page-break"></div>
@@ -63,42 +59,36 @@ By leveraging these design patterns, the `orchestrator.py` module provides a rob
 
 ## Overview
 
-The application entry point is defined in the `app.py` file, which serves as the primary entry point for the application. This module is responsible for initializing the application and orchestrating its various components.
+The application entry point serves as the primary access point for the execution of the program. It is defined within the `app.py` file, denoted by the `.py` extension, and is characterized by a singular entry point.
 
-### Module Details
+### Module Description
 
-| Attribute | Description | Value |
-| --- | --- | --- |
-| Path | The file path of the module | app.py |
-| Extension | The file extension of the module | py |
-| Dependencies | The modules that this module depends on | orchestrator.py |
-| Out Degree | The number of modules that this module depends on | 1 |
-| In Degree | The number of modules that depend on this module | 0 |
+The `app.py` module serves as the entry point for the application. It contains the necessary symbols for initializing the application and setting up the required dependencies.
 
 ### Symbols
 
-| Symbol | Description | Type |
-| --- | --- | --- |
-| main | The main entry point of the application | Function |
-
-### main Function
-
-The `main` function is the primary entry point of the application. It is responsible for initializing the application and orchestrating its various components. The function has no parameters and does not return any value.
+| Symbol | Description | Parameters | Return Value |
+| --- | --- | --- | --- |
+| `main` | The primary application entry point. This function initializes the application and sets up the required dependencies. | None | None |
 
 ### Dependencies
 
-The `app.py` module depends on the `orchestrator.py` module, which provides the necessary functionality for orchestrating the application's components.
+The application entry point has a dependency on the `orchestrator.py` module. This dependency is essential for the proper functioning of the application.
 
-### Sequence of Operations
+| Dependency | Description | In-Degree | Out-Degree |
+| --- | --- | --- | --- |
+| `orchestrator.py` | Provides the necessary orchestration functionality for the application. | 1 | 0 |
 
-1. The `main` function is called, which initializes the application.
-2. The `main` function imports the necessary modules, including `orchestrator.py`.
-3. The `main` function calls the necessary functions in `orchestrator.py` to orchestrate the application's components.
-4. The application is started, and the necessary components are initialized and started.
+### Module Attributes
 
-### Error Handling
+- **Path**: `app.py`
+- **Extension**: `.py`
+- **Out-Degree**: 1
+- **In-Degree**: 0
 
-Any errors that occur during the execution of the `main` function are handled by the application's error handling mechanism, which is described in a separate chapter.
+### Functional Description
+
+Upon execution of the application, the `main` function within the `app.py` module is invoked. This function initializes the application and sets up the required dependencies, including the `orchestrator.py` module. The application then proceeds to execute its primary functionality, leveraging the orchestration provided by the `orchestrator.py` module.
 
 
 <div class="page-break"></div>
@@ -106,59 +96,52 @@ Any errors that occur during the execution of the `main` function are handled by
 <h1 class='chapter-header'>Chapter 3: Code Generation</h1>
 
 ## Overview
-The code generation module is responsible for generating the necessary code for the project plan and test cases. This chapter provides an overview of the code generation process and the key components involved.
-
-### Code Generation Module
-The code generation module consists of two main files: `code_generation.py` and `code_testcases.py`. These files contain the necessary functions and symbols to generate the project plan and test cases.
+The code generation module is responsible for generating the project plan based on the input provided. This module is implemented in the `code_generation.py` file and does not have any dependencies.
 
 ### Symbols
-The following table lists the symbols used in the code generation module:
+The following symbols are defined in the `code_generation.py` module:
 
-| Symbol | Description | File |
-| --- | --- | --- |
-| `generate_project_plan` | Function to generate the project plan | `code_generation.py` |
-| `generate_testcases` | Function to generate test cases | `code_testcases.py` |
-
-### Dependencies
-The code generation module has no dependencies on other modules.
-
-### Module Interactions
-The following table lists the interactions between the code generation module and other modules:
-
-| Module | Interaction | Description |
-| --- | --- | --- |
-| `code_generation.py` | Input | Receives input from the project planning module |
-| `code_testcases.py` | None | No interactions with other modules |
-
-### Code Generation Process
-The code generation process involves the following steps:
-
-1. **Project Plan Generation**: The `generate_project_plan` function in `code_generation.py` generates the project plan based on the input received from the project planning module.
-2. **Test Case Generation**: The `generate_testcases` function in `code_testcases.py` generates test cases based on the project plan generated in step 1.
-
-### Code Structure
-The code generation module follows the following structure:
-
-* `code_generation.py`:
-	+ `generate_project_plan` function
-* `code_testcases.py`:
-	+ `generate_testcases` function
-
-### Data Flow
-The following table lists the data flow between the code generation module and other modules:
-
-| Module | Input | Output |
-| --- | --- | --- |
-| `code_generation.py` | Project planning data | Project plan |
-| `code_testcases.py` | Project plan | Test cases |
-
-### Control Flow
-The following table lists the control flow between the code generation module and other modules:
-
-| Module | Control Flow |
+| Symbol | Description |
 | --- | --- |
-| `code_generation.py` | Receives control from project planning module |
-| `code_testcases.py` | No control flow interactions with other modules |
+| `generate_project_plan` | Function to generate the project plan based on the input provided. |
+
+### Function Definitions
+#### generate_project_plan
+* **Parameters:** None
+* **Returns:** Project plan
+* **Description:** This function generates the project plan based on the input provided.
+* **Implementation:**
+	+ The function takes no arguments.
+	+ It uses the input provided to generate the project plan.
+	+ The generated project plan is returned by the function.
+
+### Module Dependencies
+The `code_generation.py` module does not have any dependencies.
+
+### Module Interfaces
+The `code_generation.py` module provides the following interface:
+
+* **Input:** Input provided for generating the project plan
+* **Output:** Generated project plan
+
+### Error Handling
+Any errors that occur during the execution of the `generate_project_plan` function are handled and logged accordingly.
+
+### Code
+The code for the `code_generation.py` module is as follows:
+
+```python
+def generate_project_plan():
+    # Generate project plan based on input provided
+    # Return the generated project plan
+    pass
+```
+
+### Testing
+The `code_generation.py` module is tested by providing different inputs and verifying that the generated project plan is correct.
+
+### Deployment
+The `code_generation.py` module is deployed as part of the larger system and is used to generate project plans based on the input provided.
 
 
 <div class="page-break"></div>
@@ -166,58 +149,79 @@ The following table lists the control flow between the code generation module an
 <h1 class='chapter-header'>Chapter 4: Code Testing and Validation</h1>
 
 ## Overview
-This chapter describes the testing and validation of the code. The code is written in Python and is located in the file `code_testing.py`. The code consists of seven functions: `create_project_directory`, `run_subprocess`, `test_maven_project`, `test_javac_project`, `test_python_project`, `test_project`, and `cleanup_directory`.
+This chapter outlines the testing and validation procedures for the code. The testing process ensures that the code behaves as expected, while validation checks that the code meets the requirements.
 
-### Symbols
-The following table lists the symbols used in the code:
+## Code Testing
+The code testing process involves running a series of test cases to verify that the code behaves correctly. The test cases are generated using the `generate_testcases` function in `code_testcases.py`.
 
-| Symbol | Description | Parameters | Return Value |
+### Test Case Generation
+The `generate_testcases` function generates test cases based on a set of predefined rules. The function takes no arguments and returns a list of test cases.
+
+| Symbol | Description | Parameters | Return Type |
 | --- | --- | --- | --- |
-| `create_project_directory` | Creates a new project directory | `project_name`: str | None |
-| `run_subprocess` | Runs a subprocess with the given command | `command`: str | int (return code) |
-| `test_maven_project` | Tests a Maven project | `project_name`: str | bool (success) |
-| `test_javac_project` | Tests a Javac project | `project_name`: str | bool (success) |
-| `test_python_project` | Tests a Python project | `project_name`: str | bool (success) |
-| `test_project` | Tests a project of unknown type | `project_name`: str | bool (success) |
-| `cleanup_directory` | Cleans up the project directory | `project_name`: str | None |
+| `generate_testcases` | Generate test cases | None | List |
 
-### Dependencies
-The code does not have any external dependencies.
+### Test Case Execution
+The test cases are executed using the `test_project` function in `code_testing.py`. The function takes a project directory as an argument and runs the test cases.
 
-### Testing
-The code is tested by running the `test_maven_project`, `test_javac_project`, `test_python_project`, and `test_project` functions with sample project names.
+| Symbol | Description | Parameters | Return Type |
+| --- | --- | --- | --- |
+| `create_project_directory` | Create a project directory | project_name: str | None |
+| `run_subprocess` | Run a subprocess | command: str | int |
+| `test_maven_project` | Test a Maven project | project_directory: str | None |
+| `test_javac_project` | Test a Javac project | project_directory: str | None |
+| `test_python_project` | Test a Python project | project_directory: str | None |
+| `test_project` | Test a project | project_directory: str | None |
+| `cleanup_directory` | Clean up a directory | directory: str | None |
 
-### Validation
-The code is validated by checking the return values of the `test_maven_project`, `test_javac_project`, `test_python_project`, and `test_project` functions.
+## Validation
+The validation process involves checking that the code meets the requirements. This includes checking that the code behaves correctly and that it produces the expected output.
 
-### Code Snippets
-The following code snippet shows the usage of the `create_project_directory` function:
+### Validation Rules
+The following rules are used to validate the code:
+
+* The code must behave correctly for all test cases.
+* The code must produce the expected output for all test cases.
+* The code must not produce any unexpected output.
+
+## Test Case Example
+The following is an example of a test case:
 ```python
-create_project_directory("my_project")
+import unittest
+
+class TestExample(unittest.TestCase):
+    def test_example(self):
+        # Test code here
+        pass
 ```
-The following code snippet shows the usage of the `run_subprocess` function:
+## Test Case Execution Example
+The following is an example of how to execute a test case:
 ```python
-return_code = run_subprocess("mvn clean package")
+import code_testing
+
+# Create a project directory
+project_directory = code_testing.create_project_directory("example")
+
+# Run the test case
+code_testing.test_project(project_directory)
 ```
-The following code snippet shows the usage of the `test_maven_project` function:
+## Validation Example
+The following is an example of how to validate the code:
 ```python
-success = test_maven_project("my_maven_project")
+import code_testing
+
+# Create a project directory
+project_directory = code_testing.create_project_directory("example")
+
+# Run the test case
+code_testing.test_project(project_directory)
+
+# Check that the code behaves correctly
+if code_testing.run_subprocess("example command") == 0:
+    print("Code behaves correctly")
+else:
+    print("Code does not behave correctly")
 ```
-### Error Handling
-The code uses try-except blocks to catch and handle exceptions. The following table lists the exceptions that are caught and handled:
-
-| Exception | Description | Handling |
-| --- | --- | --- |
-| `FileNotFoundError` | Raised when the project directory does not exist | Create the project directory |
-| `NotADirectoryError` | Raised when the project directory is not a directory | Raise a `ValueError` |
-| `ValueError` | Raised when the project name is invalid | Raise a `ValueError` |
-
-### Limitations
-The code has the following limitations:
-
-* It only supports testing Maven, Javac, and Python projects.
-* It does not support testing projects of other types.
-* It does not handle errors that occur during the testing process.
 
 
 <div class="page-break"></div>
@@ -225,55 +229,92 @@ The code has the following limitations:
 <h1 class='chapter-header'>Chapter 5: Project Documentation and Configuration</h1>
 
 ## Overview
+This chapter outlines the project documentation and configuration files that are essential for the project's setup and maintenance. The files discussed in this chapter include `.gitignore`, `README.md`, and `requirements.txt`.
 
-This chapter outlines the project documentation and configuration files used in the project. The documentation and configuration files provide essential information for developers, maintainers, and users to understand the project's structure, dependencies, and requirements.
+## .gitignore
+The `.gitignore` file is used to specify files and directories that should be ignored by Git. This file is crucial in preventing unnecessary files from being committed to the repository.
 
-### Project Documentation Files
-
-The project documentation files are listed in the following table:
-
-| File Path | File Extension | Description |
-| --- | --- | --- |
-| README.md | md | The README file provides an introduction to the project, its purpose, and its usage. |
-| .gitignore | gitignore | The .gitignore file specifies the files and directories to be ignored by the version control system. |
-
-### Project Configuration Files
-
-The project configuration files are listed in the following table:
-
-| File Path | File Extension | Description |
-| --- | --- | --- |
-| requirements.txt | txt | The requirements file lists the project's dependencies, including libraries and frameworks. |
-
-### Symbols
-
-There are no symbols defined in the project documentation and configuration files.
-
-### Dependencies
-
-There are no dependencies defined in the project documentation and configuration files.
-
-### File Dependencies
-
-The following table shows the file dependencies:
-
-| File Path | Out Degree | In Degree |
-| --- | --- | --- |
-| .gitignore | 0 | 0 |
-| README.md | 0 | 0 |
-| requirements.txt | 0 | 0 |
-
-Note: Out degree represents the number of files that the current file depends on, while in degree represents the number of files that depend on the current file.
-
-### File Extensions
-
-The following table shows the file extensions used in the project documentation and configuration files:
-
-| File Extension | Description |
+| Symbol | Description |
 | --- | --- |
-| md | Markdown file extension used for the README file. |
-| gitignore | Git ignore file extension used for the .gitignore file. |
-| txt | Text file extension used for the requirements file. |
+| `#` | Used for comments |
+| `*` | Matches any characters (except `/`) |
+| `?` | Matches a single character |
+| `[` | Begins a character class |
+| `]` | Ends a character class |
+
+Example:
+```
+# Ignore all .tmp files
+*.tmp
+
+# Ignore all files in the build directory
+build/
+```
+
+## README.md
+The `README.md` file provides a brief overview of the project, including its purpose, features, and setup instructions. This file is written in Markdown format, which allows for easy formatting and readability.
+
+| Symbol | Description |
+| --- | --- |
+| `#` | Heading |
+| `*` | Emphasis (italic) |
+| `**` | Strong emphasis (bold) |
+| `[` | Link or image |
+| `]` | Link or image |
+| `(` | Link or image |
+| `)` | Link or image |
+
+Example:
+```
+# Project Overview
+
+This project provides a simple example of a Python application.
+
+## Features
+
+* Easy setup
+* Simple usage
+
+## Setup Instructions
+
+1. Install the required packages: `pip install -r requirements.txt`
+2. Run the application: `python main.py`
+```
+
+## requirements.txt
+The `requirements.txt` file specifies the dependencies required by the project. This file is used by pip to install the necessary packages.
+
+| Symbol | Description |
+| --- | --- |
+| `==` | Specifies the exact version of the package |
+| `>=` | Specifies the minimum version of the package |
+| `<=` | Specifies the maximum version of the package |
+| `!=` | Specifies the version of the package to exclude |
+
+Example:
+```
+numpy==1.20.0
+pandas>=1.3.0
+scikit-learn<=1.0.0
+```
+
+## File Dependencies
+The following table outlines the dependencies between the files discussed in this chapter.
+
+| File | Dependencies |
+| --- | --- |
+| `.gitignore` | None |
+| `README.md` | None |
+| `requirements.txt` | None |
+
+## File Extensions
+The following table outlines the file extensions used in this chapter.
+
+| File | Extension |
+| --- | --- |
+| `.gitignore` | `.gitignore` |
+| `README.md` | `.md` |
+| `requirements.txt` | `.txt` |
 
 
 <div class="page-break"></div>

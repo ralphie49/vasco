@@ -23,7 +23,7 @@ faiss_index_storage/
 temp_*/
 vector_db_cache/
 repo_cache/
-
+cloned_repos/
 # Virtual Environments
 .venv/
 env/
